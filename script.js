@@ -420,7 +420,7 @@ function createMarkers(rows) {
                 autoPanPaddingTopLeft: [50, 50],
                 autoPanPaddingBottomRight: [50, 50],
                 closeOnClick: false,
-                autoClose: false,
+                autoClose: true,  // Only allow one popup at a time
                 maxWidth: 300
             }).setContent(popupContent);
 
