@@ -214,9 +214,9 @@ function initMap() {
             // Center on Bedford-Stuyvesant, Brooklyn
             map = L.map('map-visualization').setView([40.686, -73.944], 13);
 
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
+            // Add CartoDB Positron tiles (light grey, matches signmap style)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> contributors',
                 maxZoom: 19
             }).addTo(map);
 
