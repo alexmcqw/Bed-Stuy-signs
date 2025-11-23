@@ -193,31 +193,49 @@ let markers = null;
 
 function initMap() {
     const mapContainer = document.getElementById('map-visualization');
-    if (!mapContainer) return;
+    if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+    }
+
+    // Check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+        console.error('Leaflet library not loaded');
+        mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error: Leaflet map library failed to load. Please refresh the page.</p>';
+        return;
+    }
 
     // Initialize map if not already done
     if (!map) {
         // Clear any existing content (remove dummy SVG if present)
         mapContainer.innerHTML = '';
         
-        // Center on Bedford-Stuyvesant, Brooklyn
-        map = L.map('map-visualization').setView([40.686, -73.944], 13);
+        try {
+            // Center on Bedford-Stuyvesant, Brooklyn
+            map = L.map('map-visualization').setView([40.686, -73.944], 13);
 
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
 
-        // Create marker layer group
-        markers = L.layerGroup().addTo(map);
-        
-        // Invalidate size to ensure proper rendering
-        setTimeout(() => {
-            if (map) {
-                map.invalidateSize();
-            }
-        }, 200);
+            // Create marker layer group
+            markers = L.layerGroup().addTo(map);
+            
+            console.log('Leaflet map initialized successfully');
+            
+            // Invalidate size to ensure proper rendering
+            setTimeout(() => {
+                if (map) {
+                    map.invalidateSize();
+                }
+            }, 200);
+        } catch (error) {
+            console.error('Error initializing Leaflet map:', error);
+            mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error initializing map. Please check the console for details.</p>';
+            return;
+        }
     } else {
         // If map already exists, just invalidate size and reload data
         setTimeout(() => {
