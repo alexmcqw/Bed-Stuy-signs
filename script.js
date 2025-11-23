@@ -628,17 +628,33 @@ async function initTimeline() {
         // Skip if we don't have valid dates
         if (!startYear || !endYear) return;
 
+        // Determine the dot date (the date that has the dot)
+        let dotYear = null;
+        if (status && status.toLowerCase() === 'closed') {
+            dotYear = endYear; // Dot is at the end (verified date)
+        } else if (status && status.toLowerCase() === 'new') {
+            dotYear = startYear; // Dot is at the start (creation date)
+        }
+
         stores.push({
             name: name,
             type: type,
             startYear: startYear,
             endYear: endYear,
-            isOpen: isOpen
+            isOpen: isOpen,
+            dotYear: dotYear,
+            status: status.toLowerCase()
         });
     });
 
-    // Sort by start year
-    stores.sort((a, b) => a.startYear - b.startYear);
+    // Sort by dot date (oldest on top, newest at bottom)
+    stores.sort((a, b) => {
+        if (a.dotYear !== b.dotYear) {
+            return a.dotYear - b.dotYear;
+        }
+        // If same year, sort by name as tiebreaker
+        return a.name.localeCompare(b.name);
+    });
 
     // Create timeline
     stores.forEach(store => {
@@ -667,25 +683,26 @@ async function initTimeline() {
         line.style.width = width + '%';
         lineContainer.appendChild(line);
 
-        // Start dot (only show if not at left edge)
-        if (store.startYear > minYear) {
+        // Start dot (only show if not at left edge) - for closed businesses
+        if (store.status === 'closed' && store.startYear > minYear) {
             const startDot = document.createElement('div');
-            startDot.className = `timeline-dot start closed`;
+            startDot.className = `timeline-dot start ${store.type}`;
             startDot.style.left = startPercent + '%';
             lineContainer.appendChild(startDot);
         }
 
-        // End dot (only show if not at right edge)
-        if (store.endYear < maxYear) {
+        // End dot - for closed businesses (at verified date) or new businesses (at creation date or right edge)
+        if (store.status === 'closed' && store.endYear < maxYear) {
             const endDot = document.createElement('div');
-            endDot.className = `timeline-dot end ${store.isOpen ? 'open' : 'closed'}`;
+            endDot.className = `timeline-dot end ${store.type}`;
             endDot.style.left = endPercent + '%';
             lineContainer.appendChild(endDot);
-        } else if (store.isOpen) {
-            // Show open dot at right edge for new businesses
+        } else if (store.status === 'new') {
+            // For new businesses, show dot at creation date (start) or at right edge if at maxYear
+            const dotPercent = store.startYear === minYear ? endPercent : startPercent;
             const endDot = document.createElement('div');
-            endDot.className = `timeline-dot end open`;
-            endDot.style.left = endPercent + '%';
+            endDot.className = `timeline-dot end ${store.type}`;
+            endDot.style.left = dotPercent + '%';
             lineContainer.appendChild(endDot);
         }
 

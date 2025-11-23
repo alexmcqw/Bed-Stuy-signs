@@ -548,6 +548,14 @@ body {
     right: 0;
 }
 
+.timeline-dot.old-school {
+    background-color: #8B6F47; /* Brown for old-school */
+}
+
+.timeline-dot.new-school {
+    background-color: #E91E63; /* Pink for new-school */
+}
+
 .timeline-dot.open {
     background-color: #10b981;
 }
