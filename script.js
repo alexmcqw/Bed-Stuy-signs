@@ -399,14 +399,6 @@ function createMarkers(rows) {
             }
 
             popupContent += `<p><strong>Predicted Class:</strong> ${predictedClass || 'N/A'}</p>`;
-            
-            if (confidence > 0) {
-                popupContent += `<p class="confidence"><strong>Confidence:</strong> ${(confidence * 100).toFixed(1)}%</p>`;
-            }
-
-            if (oldSchoolProb > 0 || newSchoolProb > 0) {
-                popupContent += `<p><strong>Old-school:</strong> ${(oldSchoolProb * 100).toFixed(1)}% | <strong>New-school:</strong> ${(newSchoolProb * 100).toFixed(1)}%</p>`;
-            }
 
             popupContent += '</div>';
 

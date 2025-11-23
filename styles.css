@@ -319,11 +319,11 @@ body {
     font-size: 1.125rem;
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .popup-content p {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     font-size: 0.875rem;
     color: #475569;
 }
@@ -340,7 +340,7 @@ body {
 }
 
 .popup-image-container {
-    margin: 0.75rem 0;
+    margin: 0.5rem 0;
     text-align: center;
 }
 
