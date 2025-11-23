@@ -271,6 +271,13 @@ body {
     background-color: #f8fafc;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+
+.legend-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .legend-item {
@@ -302,6 +309,38 @@ body {
 
 .legend-color.new-school {
     background-color: #E91E63;
+}
+
+.legend-marker {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.legend-marker.old-school {
+    background-color: #8B6F47;
+}
+
+.legend-marker.new-school {
+    background-color: #E91E63;
+}
+
+.legend-marker.closed.old-school {
+    border: 2px solid #8B6F47; /* Same as background (no visible border) */
+}
+
+.legend-marker.closed.new-school {
+    border: 2px solid #E91E63; /* Same as background (no visible border) */
+}
+
+.legend-marker.new.old-school {
+    border: 2px solid #5A4A2F; /* Darker brown border */
+}
+
+.legend-marker.new.new-school {
+    border: 2px solid #B71C1C; /* Darker pink border */
 }
 
 /* Leaflet popup styles */
