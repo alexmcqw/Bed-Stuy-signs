@@ -320,6 +320,12 @@ function createMarkers(rows) {
                 return;
             }
 
+            // Get photo URL and skip if no image
+            const photoUrl = row['Photo_URL'] || '';
+            if (!photoUrl || photoUrl.trim() === '') {
+                return; // Skip markers without images
+            }
+
             // Get prediction data
             const predictedClass = row['Predicted Class'] || '';
             const confidence = parseFloat(row['Prediction Confidence']) || 0;
@@ -350,6 +356,11 @@ function createMarkers(rows) {
             // Create popup content
             let popupContent = '<div class="popup-content">';
             popupContent += `<h3>${name}</h3>`;
+            
+            // Add storefront image thumbnail
+            if (photoUrl) {
+                popupContent += `<div class="popup-image-container"><img src="${photoUrl}" alt="${name}" class="popup-thumbnail" onerror="this.style.display='none'"></div>`;
+            }
             
             if (address) {
                 popupContent += `<p class="address"><strong>Address:</strong> ${address}`;
