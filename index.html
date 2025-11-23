@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>type_face_ - Machine-reading gentrification on Bed-Stuy's storefront signs</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -88,19 +91,23 @@
                 <div id="map" class="tab-panel" role="tabpanel">
                     <section class="content-section">
                         <h2>Storefront Typography Map</h2>
-                        <p>This visualization maps 300 storefronts across Brooklyn, categorized by typography style to examine patterns of gentrification in Bedford-Stuyvesant.</p>
+                        <p>This visualization maps storefronts across Bedford-Stuyvesant, categorized by typography style (Old-school vs. New-school) to examine patterns of gentrification.</p>
+                        <div class="map-stats">
+                            <p><strong>Total markers:</strong> <span id="total-markers">0</span></p>
+                            <p><strong>Old-school:</strong> <span id="old-school-count">0</span> | <strong>New-school:</strong> <span id="new-school-count">0</span></p>
+                        </div>
                         <div class="map-container">
                             <div id="map-visualization" class="map-visualization">
-                                <!-- Map will be rendered here -->
+                                <!-- Leaflet map will be rendered here -->
                             </div>
                             <div class="map-legend">
                                 <div class="legend-item">
-                                    <span class="legend-color dark-slate"></span>
-                                    <span>Traditional Typography (<span id="traditional-count">150</span>)</span>
+                                    <span class="legend-color old-school"></span>
+                                    <span>Old-school Typography (<span id="traditional-count">0</span>)</span>
                                 </div>
                                 <div class="legend-item">
-                                    <span class="legend-color light-slate"></span>
-                                    <span>Modern Typography (<span id="modern-count">150</span>)</span>
+                                    <span class="legend-color new-school"></span>
+                                    <span>New-school Typography (<span id="modern-count">0</span>)</span>
                                 </div>
                             </div>
                         </div>

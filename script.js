@@ -176,81 +176,168 @@ function initWeeklyChart() {
     });
 }
 
-// Map Visualization
+// Map Visualization with Leaflet
+let map = null;
+let markers = null;
+
 function initMap() {
     const mapContainer = document.getElementById('map-visualization');
-    if (!mapContainer || mapContainer.dataset.initialized === 'true') return;
+    if (!mapContainer) return;
 
-    // Clear any existing content
-    mapContainer.innerHTML = '';
-    mapContainer.dataset.initialized = 'true';
+    // Initialize map if not already done
+    if (!map) {
+        // Center on Bedford-Stuyvesant, Brooklyn
+        map = L.map('map-visualization').setView([40.686, -73.944], 13);
 
-    // Create SVG for Brooklyn outline (simplified)
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-    svg.setAttribute('viewBox', '0 0 800 600');
-    svg.style.position = 'absolute';
-    svg.style.top = '0';
-    svg.style.left = '0';
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
 
-    // Simplified Brooklyn outline (polygon approximation)
-    const brooklynPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    brooklynPath.setAttribute('d', 'M 100 100 L 700 80 L 750 200 L 720 400 L 600 550 L 200 520 L 80 350 Z');
-    brooklynPath.setAttribute('fill', '#ffffff');
-    brooklynPath.setAttribute('stroke', '#cbd5e1');
-    brooklynPath.setAttribute('stroke-width', '2');
-    svg.appendChild(brooklynPath);
-
-    mapContainer.appendChild(svg);
-
-    // Generate 300 random pinpoints
-    const traditionalCount = 150;
-    const modernCount = 150;
-    let traditionalPlaced = 0;
-    let modernPlaced = 0;
-
-    // Function to check if point is within Brooklyn bounds (simplified)
-    function isInBrooklyn(x, y) {
-        // Simple bounding box check
-        return x > 100 && x < 700 && y > 80 && y < 520;
+        // Create marker layer group
+        markers = L.layerGroup().addTo(map);
     }
 
-    // Generate traditional pins
-    while (traditionalPlaced < traditionalCount) {
-        const x = Math.random() * 600 + 100;
-        const y = Math.random() * 440 + 80;
-        
-        if (isInBrooklyn(x, y)) {
-            const pin = document.createElement('div');
-            pin.className = 'map-pin traditional';
-            pin.style.left = (x / 800 * 100) + '%';
-            pin.style.top = (y / 600 * 100) + '%';
-            pin.title = 'Traditional Typography Storefront';
-            mapContainer.appendChild(pin);
-            traditionalPlaced++;
+    // Load CSV data
+    loadCSVData();
+}
+
+async function loadCSVData() {
+    try {
+        const response = await fetch('data.csv');
+        if (!response.ok) {
+            throw new Error('Failed to load CSV data');
+        }
+
+        const csvText = await response.text();
+        const parsed = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: true
+        });
+
+        if (parsed.errors.length > 0) {
+            console.warn('CSV parsing errors:', parsed.errors);
+        }
+
+        createMarkers(parsed.data);
+    } catch (error) {
+        console.error('Error loading CSV:', error);
+        const mapContainer = document.getElementById('map-visualization');
+        if (mapContainer) {
+            mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error loading map data. Please ensure data.csv is available.</p>';
         }
     }
+}
 
-    // Generate modern pins
-    while (modernPlaced < modernCount) {
-        const x = Math.random() * 600 + 100;
-        const y = Math.random() * 440 + 80;
-        
-        if (isInBrooklyn(x, y)) {
-            const pin = document.createElement('div');
-            pin.className = 'map-pin modern';
-            pin.style.left = (x / 800 * 100) + '%';
-            pin.style.top = (y / 600 * 100) + '%';
-            pin.title = 'Modern Typography Storefront';
-            mapContainer.appendChild(pin);
-            modernPlaced++;
+function createMarkers(rows) {
+    if (!markers) return;
+
+    // Clear existing markers
+    markers.clearLayers();
+
+    let oldSchoolCount = 0;
+    let newSchoolCount = 0;
+    let totalCount = 0;
+
+    rows.forEach(row => {
+        try {
+            // Get coordinates
+            const lat = parseFloat(row['LiveXYZSeptember132025_XYTableToPoint_entrances_main_lat']);
+            const lng = parseFloat(row['LiveXYZSeptember132025_XYTableToPoint_entrances_main_lon']);
+
+            // Skip if coordinates are invalid
+            if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+                return;
+            }
+
+            // Get prediction data
+            const predictedClass = row['Predicted Class'] || '';
+            const confidence = parseFloat(row['Prediction Confidence']) || 0;
+            const oldSchoolProb = parseFloat(row['Old-school Probability']) || 0;
+            const newSchoolProb = parseFloat(row['New-school Probability']) || 0;
+            const status = row['Status_simplified'] || '';
+            const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 'Unknown';
+            const address = row['LiveXYZSeptember132025_XYTableToPoint_address'] || '';
+            const postcode = row['LiveXYZSeptember132025_XYTableToPoint_postcode'] || '';
+            const category = row['LiveXYZSeptember132025_XYTableToPoint_subcategoriesPrimary_name'] || 
+                           row['LiveXYZSeptember132025_XYTableToPoint_categoriesPrimary_name'] || '';
+
+            // Determine if Old-school or New-school
+            const isOldSchool = predictedClass.includes('Old-school') || oldSchoolProb > newSchoolProb;
+
+            // Create custom icon based on typography class
+            const iconColor = isOldSchool ? '#334155' : '#64748b';
+            const icon = L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background-color: ${iconColor}; width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                iconSize: [10, 10],
+                iconAnchor: [5, 5]
+            });
+
+            // Create marker
+            const marker = L.marker([lat, lng], { icon: icon });
+
+            // Create popup content
+            let popupContent = '<div class="popup-content">';
+            popupContent += `<h3>${name}</h3>`;
+            
+            if (address) {
+                popupContent += `<p class="address"><strong>Address:</strong> ${address}`;
+                if (postcode) {
+                    popupContent += `, ${postcode}`;
+                }
+                popupContent += '</p>';
+            }
+
+            if (category) {
+                popupContent += `<p><strong>Category:</strong> ${category}</p>`;
+            }
+
+            if (status) {
+                popupContent += `<p><strong>Status:</strong> ${status}</p>`;
+            }
+
+            popupContent += `<p><strong>Predicted Class:</strong> ${predictedClass || 'N/A'}</p>`;
+            
+            if (confidence > 0) {
+                popupContent += `<p class="confidence"><strong>Confidence:</strong> ${(confidence * 100).toFixed(1)}%</p>`;
+            }
+
+            if (oldSchoolProb > 0 || newSchoolProb > 0) {
+                popupContent += `<p><strong>Old-school:</strong> ${(oldSchoolProb * 100).toFixed(1)}% | <strong>New-school:</strong> ${(newSchoolProb * 100).toFixed(1)}%</p>`;
+            }
+
+            popupContent += '</div>';
+
+            marker.bindPopup(popupContent);
+            markers.addLayer(marker);
+
+            // Update counts
+            totalCount++;
+            if (isOldSchool) {
+                oldSchoolCount++;
+            } else {
+                newSchoolCount++;
+            }
+        } catch (error) {
+            console.error('Error creating marker for row:', row, error);
         }
-    }
+    });
 
-    // Update legend counts
-    document.getElementById('traditional-count').textContent = traditionalCount;
-    document.getElementById('modern-count').textContent = modernCount;
+    // Update stats
+    document.getElementById('total-markers').textContent = totalCount;
+    document.getElementById('old-school-count').textContent = oldSchoolCount;
+    document.getElementById('new-school-count').textContent = newSchoolCount;
+    document.getElementById('traditional-count').textContent = oldSchoolCount;
+    document.getElementById('modern-count').textContent = newSchoolCount;
+
+    // Fit map to markers if we have any
+    if (totalCount > 0 && markers.getLayers().length > 0) {
+        const group = new L.featureGroup(markers.getLayers());
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
 }
 
 // Timeline Visualization
