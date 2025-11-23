@@ -213,33 +213,52 @@ function initMap() {
         try {
             // Center on Bedford-Stuyvesant, Brooklyn
             map = L.map('map-visualization').setView([40.686, -73.944], 13);
-
-            // Add CartoDB Positron tiles (light grey, matches signmap style)
-            const cartoTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> contributors',
-                maxZoom: 19,
-                subdomains: 'abcd'
-            });
-            cartoTiles.addTo(map);
-            console.log('CartoDB Positron tiles added to map');
-
-            // Create marker layer group
-            markers = L.layerGroup().addTo(map);
-            
-            console.log('Leaflet map initialized successfully');
-            
-            // Invalidate size to ensure proper rendering
-            setTimeout(() => {
-                if (map) {
-                    map.invalidateSize();
-                }
-            }, 200);
         } catch (error) {
-            console.error('Error initializing Leaflet map:', error);
-            mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error initializing map. Please check the console for details.</p>';
+            console.error('Error creating map:', error);
             return;
         }
-    } else {
+    }
+
+    // Always ensure CartoDB tiles are used (remove old tiles if present)
+    try {
+        // Remove any existing tile layers
+        map.eachLayer(function(layer) {
+            if (layer instanceof L.TileLayer) {
+                map.removeLayer(layer);
+            }
+        });
+
+        // Add CartoDB Positron tiles (light grey, matches signmap style)
+        const cartoTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> contributors',
+            maxZoom: 19,
+            subdomains: 'abcd'
+        });
+        cartoTiles.addTo(map);
+        console.log('CartoDB Positron tiles added to map');
+
+        // Create marker layer group if it doesn't exist
+        if (!markers) {
+            markers = L.layerGroup().addTo(map);
+        }
+        
+        console.log('Leaflet map initialized successfully');
+        
+        // Invalidate size to ensure proper rendering
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+            }
+        }, 200);
+    } catch (error) {
+        console.error('Error setting up map tiles:', error);
+        if (mapContainer) {
+            mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error loading map tiles. Please check the console for details.</p>';
+        }
+        return;
+    }
+
+    if (map) {
         // If map already exists, just invalidate size and reload data
         setTimeout(() => {
             if (map) {
