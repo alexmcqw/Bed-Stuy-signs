@@ -327,7 +327,10 @@ function createMarkers(rows) {
             }
 
             // Get prediction data
-            const predictedClass = row['Predicted Class'] || '';
+            let predictedClass = row['Predicted Class'] || '';
+            // Remove leading numeral (0 or 1) and space from Predicted Class
+            predictedClass = predictedClass.replace(/^[01]\s*/, '');
+            
             const confidence = parseFloat(row['Prediction Confidence']) || 0;
             const oldSchoolProb = parseFloat(row['Old-school Probability']) || 0;
             const newSchoolProb = parseFloat(row['New-school Probability']) || 0;
