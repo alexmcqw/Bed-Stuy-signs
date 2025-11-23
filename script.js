@@ -413,7 +413,69 @@ function createMarkers(rows) {
 
             popupContent += '</div>';
 
-            marker.bindPopup(popupContent);
+            // Bind popup with auto-positioning options
+            marker.bindPopup(popupContent, {
+                autoPan: true,
+                autoPanPadding: [50, 50],
+                autoPanPaddingTopLeft: [50, 50],
+                autoPanPaddingBottomRight: [50, 50],
+                closeOnClick: false,
+                autoClose: false
+            });
+
+            // Add event listener to adjust popup position based on viewport
+            marker.on('popupopen', function() {
+                setTimeout(() => {
+                    const popup = marker.getPopup();
+                    if (popup && popup.isOpen()) {
+                        const popupElement = popup.getElement();
+                        const mapBounds = map.getBounds();
+                        const markerLatLng = marker.getLatLng();
+                        const mapPixelPoint = map.latLngToContainerPoint(markerLatLng);
+                        const mapSize = map.getSize();
+                        
+                        // Get popup dimensions (approximate)
+                        const popupWidth = 250; // Approximate popup width
+                        const popupHeight = 300; // Approximate popup height
+                        
+                        // Check available space in each direction
+                        const spaceAbove = mapPixelPoint.y;
+                        const spaceBelow = mapSize.y - mapPixelPoint.y;
+                        const spaceLeft = mapPixelPoint.x;
+                        const spaceRight = mapSize.x - mapPixelPoint.x;
+                        
+                        // Determine best popup direction
+                        let direction = 'top'; // Default
+                        if (spaceAbove < popupHeight && spaceBelow > popupHeight) {
+                            direction = 'bottom';
+                        } else if (spaceAbove < popupHeight && spaceBelow < popupHeight) {
+                            // Not enough space above or below, try sides
+                            if (spaceRight > spaceLeft && spaceRight > popupWidth) {
+                                direction = 'right';
+                            } else if (spaceLeft > popupWidth) {
+                                direction = 'left';
+                            } else if (spaceBelow > spaceAbove) {
+                                direction = 'bottom';
+                            }
+                        }
+                        
+                        // Update popup class to change direction
+                        if (popupElement) {
+                            // Remove existing direction classes
+                            popupElement.classList.remove('leaflet-popup-top', 'leaflet-popup-bottom', 'leaflet-popup-left', 'leaflet-popup-right');
+                            // Add new direction class
+                            popupElement.classList.add(`leaflet-popup-${direction}`);
+                            
+                            // Update tip position
+                            const tip = popupElement.querySelector('.leaflet-popup-tip');
+                            if (tip) {
+                                tip.className = `leaflet-popup-tip leaflet-popup-tip-${direction}`;
+                            }
+                        }
+                    }
+                }, 10);
+            });
+
             markers.addLayer(marker);
 
             // Update counts
