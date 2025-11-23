@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Model files (too large for GitHub)
+*.h5
+*.hdf5
+*.pb
+*.pkl
+*.pth
+*.pt
+*.weights
+*.bin
+*.tflite
+
+# Data files (large)
+*.npy
+*.npz
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# Old prediction files (keep only the latest)
+predictions_*_fresh.*
+predictions_*_v2.*
+predictions_*_v3.*
+!predictions_*_fixed.*
+
+# Model directories (too large)
+converted_keras*/
+Bed-Stuy storefronts/
+
+# Photo directories (too large)
+Photo files/
+
