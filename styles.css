@@ -1,0 +1,444 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.6;
+    color: #1e293b;
+    background-color: #ffffff;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Header Styles */
+.header {
+    margin-bottom: 3rem;
+}
+
+.header-banner {
+    margin-bottom: 1rem;
+}
+
+.banner-text {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.title-section {
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 4rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    color: #475569;
+    margin-bottom: 0.5rem;
+    font-weight: 400;
+}
+
+.date {
+    font-size: 1rem;
+    color: #64748b;
+}
+
+/* Tab Navigation */
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 2rem;
+    padding-bottom: 0;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.tab-button:hover {
+    color: #334155;
+    background-color: #f8fafc;
+}
+
+.tab-button.active {
+    color: #334155;
+    border-bottom-color: #334155;
+    font-weight: 600;
+}
+
+/* Tab Content */
+.tab-content {
+    min-height: 500px;
+}
+
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Content Sections */
+.content-section {
+    margin-bottom: 3rem;
+}
+
+.content-section h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    margin-top: 0;
+}
+
+.content-section h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+}
+
+.content-section p {
+    margin-bottom: 1rem;
+    color: #475569;
+    line-height: 1.8;
+}
+
+.content-section ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #475569;
+}
+
+.content-section li {
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+}
+
+.objectives-list {
+    list-style: none;
+    margin-left: 0;
+}
+
+.objectives-list li {
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.objectives-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #334155;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Figure Captions */
+.figure-caption {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+/* Chart Container */
+.chart-container {
+    background-color: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    border: 1px solid #e2e8f0;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.metric-card {
+    background-color: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.metric-change {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+/* Map Styles */
+.map-container {
+    margin: 2rem 0;
+}
+
+.map-visualization {
+    width: 100%;
+    height: 600px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.map-legend {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #475569;
+    font-size: 0.875rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-color.dark-slate {
+    background-color: #334155;
+}
+
+.legend-color.light-slate {
+    background-color: #94a3b8;
+}
+
+.map-description {
+    margin-top: 1.5rem;
+    color: #475569;
+}
+
+/* Timeline Styles */
+.timeline-container {
+    margin: 2rem 0;
+}
+
+.timeline-visualization {
+    width: 100%;
+    min-height: 800px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 2rem;
+    overflow-x: auto;
+}
+
+/* Case Study Section */
+.case-study-section {
+    margin-bottom: 2.5rem;
+}
+
+/* Footer */
+.footer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.footer p {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .main-title {
+        font-size: 2.5rem;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .map-visualization {
+        height: 400px;
+    }
+}
+
+/* Map Pin Styles */
+.map-pin {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+.map-pin:hover {
+    transform: scale(1.5);
+    z-index: 10;
+}
+
+.map-pin.traditional {
+    background-color: #334155;
+}
+
+.map-pin.modern {
+    background-color: #94a3b8;
+}
+
+/* Timeline Item Styles */
+.timeline-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.timeline-item:hover {
+    background-color: #f1f5f9;
+}
+
+.timeline-store-name {
+    min-width: 150px;
+    font-size: 0.875rem;
+    color: #475569;
+    margin-right: 1rem;
+}
+
+.timeline-line-container {
+    flex: 1;
+    position: relative;
+    height: 40px;
+    margin-right: 1rem;
+}
+
+.timeline-line {
+    position: absolute;
+    height: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.timeline-line.traditional {
+    background-color: #334155;
+}
+
+.timeline-line.modern {
+    background-color: #94a3b8;
+}
+
+.timeline-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid white;
+}
+
+.timeline-dot.start {
+    left: 0;
+}
+
+.timeline-dot.end {
+    right: 0;
+}
+
+.timeline-dot.open {
+    background-color: #10b981;
+}
+
+.timeline-dot.closed {
+    background-color: #ef4444;
+}
+
+.timeline-years {
+    min-width: 200px;
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+}
+

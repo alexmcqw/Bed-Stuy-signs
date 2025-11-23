@@ -10,6 +10,9 @@ This project uses a TensorFlow/Keras model trained in Google's Teachable Machine
 
 ```
 bed-stuy-signs/
+├── index.html                     # Website homepage
+├── styles.css                     # Website styling
+├── script.js                      # Website interactivity
 ├── scripts/
 │   ├── batch_predict.py          # Main script for batch predictions
 │   └── preprocess_images.py      # Image preprocessing utilities
@@ -80,6 +83,19 @@ Predictions include:
 - **CSV/JSON export**: Results available in multiple formats
 - **Data merging**: Predictions can be merged with existing datasets
 
+## Website
+
+This repository includes a data visualization website showcasing the research project. The website features:
+
+- **Interactive tabs**: Intro, Map, Timeline, Background, and One Block in History
+- **Data visualizations**: Charts, interactive maps, and timeline visualizations
+- **GitHub Pages**: The website can be hosted on GitHub Pages
+
+To enable GitHub Pages:
+1. Go to Settings > Pages in your GitHub repository
+2. Select the `main` branch as the source
+3. Your site will be available at `https://YOUR_USERNAME.github.io/bed-stuy-signs`
+
 ## Notes
 
 - The preprocessing uses BILINEAR resizing and EXIF orientation correction to match Teachable Machine's web interface
@@ -89,4 +105,5 @@ Predictions include:
 ## License
 
 [Add your license here]
+
 

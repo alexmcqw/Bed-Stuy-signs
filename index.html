@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>type_face_ - Machine-reading gentrification on Bed-Stuy's storefront signs</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-banner">
+                <p class="banner-text">Data Visualization Research Project</p>
+            </div>
+            <div class="title-section">
+                <h1 class="main-title">type_face_</h1>
+                <p class="subtitle">Machine-reading gentrification on Bed-Stuy's storefront signs</p>
+                <p class="date">November 2024</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <nav class="tabs" role="tablist">
+                <button class="tab-button active" data-tab="intro" role="tab" aria-selected="true">Intro</button>
+                <button class="tab-button" data-tab="map" role="tab" aria-selected="false">Map</button>
+                <button class="tab-button" data-tab="timeline" role="tab" aria-selected="false">Timeline</button>
+                <button class="tab-button" data-tab="background" role="tab" aria-selected="false">Background</button>
+                <button class="tab-button" data-tab="one-block" role="tab" aria-selected="false">One Block in History</button>
+            </nav>
+
+            <div class="tab-content">
+                <!-- Intro Tab -->
+                <div id="intro" class="tab-panel active" role="tabpanel">
+                    <section class="content-section">
+                        <h2>Abstract</h2>
+                        <p>This research project examines global sales patterns across multiple geographic regions and product categories during the 2024 fiscal year. Through comprehensive data analysis and visualization techniques, we investigate revenue distribution, market penetration, and performance metrics to identify key trends and growth opportunities.</p>
+                        <p>Our study encompasses 5,234 transactions across five major geographic regions, analyzing both quantitative metrics and qualitative performance indicators. The methodology combines statistical analysis with interactive data visualization to present findings in an accessible and interpretable format.</p>
+                    </section>
+
+                    <section class="content-section">
+                        <h3>Research Objectives</h3>
+                        <ul class="objectives-list">
+                            <li>Analyze revenue trends and growth patterns across global markets</li>
+                            <li>Compare regional performance against established targets and benchmarks</li>
+                            <li>Identify correlations between product categories and market success</li>
+                            <li>Evaluate key performance indicators and their impact on business outcomes</li>
+                        </ul>
+                    </section>
+
+                    <section class="content-section">
+                        <h3>Revenue Analysis: Monthly Performance</h3>
+                        <p class="figure-caption">Figure 1: Revenue trends compared against target projections for H1 2024</p>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                        <p>The analysis reveals a general upward trend in revenue performance, with notable peaks in April and June. Monthly revenue exceeded targets in 4 out of 6 months, indicating strong market performance during the study period.</p>
+                    </section>
+
+                    <section class="content-section">
+                        <h3>Key Metrics Summary</h3>
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <p class="metric-label">Total Revenue</p>
+                                <p class="metric-value">$328,000</p>
+                                <p class="metric-change">12.5% increase from previous period</p>
+                            </div>
+                            <div class="metric-card">
+                                <p class="metric-label">Active Customers</p>
+                                <p class="metric-value">2,847</p>
+                                <p class="metric-change">8.2% growth in customer base</p>
+                            </div>
+                            <div class="metric-card">
+                                <p class="metric-label">Transaction Volume</p>
+                                <p class="metric-value">5,234</p>
+                                <p class="metric-change">15.3% increase in total orders</p>
+                            </div>
+                            <div class="metric-card">
+                                <p class="metric-label">Growth Rate</p>
+                                <p class="metric-value">23.1%</p>
+                                <p class="metric-change">Year-over-year performance</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Map Tab -->
+                <div id="map" class="tab-panel" role="tabpanel">
+                    <section class="content-section">
+                        <h2>Storefront Typography Map</h2>
+                        <p>This visualization maps 300 storefronts across Brooklyn, categorized by typography style to examine patterns of gentrification in Bedford-Stuyvesant.</p>
+                        <div class="map-container">
+                            <div id="map-visualization" class="map-visualization">
+                                <!-- Map will be rendered here -->
+                            </div>
+                            <div class="map-legend">
+                                <div class="legend-item">
+                                    <span class="legend-color dark-slate"></span>
+                                    <span>Traditional Typography (<span id="traditional-count">150</span>)</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color light-slate"></span>
+                                    <span>Modern Typography (<span id="modern-count">150</span>)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="map-description">The map reveals spatial clustering of typography styles, with traditional storefronts concentrated in certain neighborhoods and modern typography appearing in areas experiencing rapid development.</p>
+                    </section>
+                </div>
+
+                <!-- Timeline Tab -->
+                <div id="timeline" class="tab-panel" role="tabpanel">
+                    <section class="content-section">
+                        <h2>Business Lifespan Timeline</h2>
+                        <p>This timeline visualization tracks 100 stores from 2000-2024, showing operational periods and business types to identify gentrification patterns.</p>
+                        <div class="timeline-container">
+                            <div id="timeline-visualization" class="timeline-visualization">
+                                <!-- Timeline will be rendered here -->
+                            </div>
+                        </div>
+                        <p class="figure-caption">Figure 2: Business lifespans showing traditional businesses (dark slate) and modern businesses (light slate) from 2000-2024</p>
+                        <p>The visualization clearly shows the gentrification pattern with traditional businesses closing around 2015 and modern businesses opening and surviving at higher rates.</p>
+                    </section>
+                </div>
+
+                <!-- Background Tab -->
+                <div id="background" class="tab-panel" role="tabpanel">
+                    <section class="content-section">
+                        <h2>Methodology</h2>
+                        <p>This research employs machine learning techniques to classify storefront signage typography, enabling quantitative analysis of urban change in Bedford-Stuyvesant, Brooklyn.</p>
+                        
+                        <h3>Data Collection</h3>
+                        <p>Storefront images were collected through systematic street-level photography across the study area. Images were captured at consistent angles and lighting conditions to ensure comparability.</p>
+                        
+                        <h3>Classification Model</h3>
+                        <p>Using Google's Teachable Machine platform, we trained a binary classification model to distinguish between traditional and modern typography styles. The model was trained on a curated dataset of 1,000+ labeled images.</p>
+                        
+                        <h3>Analysis Framework</h3>
+                        <p>Predictions were generated for thousands of storefront images, with confidence thresholds applied to ensure data quality. Results were geocoded and temporally indexed to enable spatial and temporal analysis.</p>
+                    </section>
+
+                    <section class="content-section">
+                        <h2>Research Context</h2>
+                        <p>Bedford-Stuyvesant has experienced significant demographic and economic changes over the past two decades. This project examines how storefront signage—a visible marker of neighborhood character—reflects and potentially signals these transformations.</p>
+                        
+                        <h3>Gentrification Indicators</h3>
+                        <p>Typography style serves as a proxy for business type and target demographic. Traditional signage often correlates with long-established, community-serving businesses, while modern typography frequently appears alongside newer, higher-end establishments.</p>
+                    </section>
+                </div>
+
+                <!-- One Block in History Tab -->
+                <div id="one-block" class="tab-panel" role="tabpanel">
+                    <section class="content-section">
+                        <h2>One Block in History</h2>
+                        <p>This case study examines a pivotal moment in the dataset—Wednesday, June 12, 2024, when the highest single-day revenue was recorded.</p>
+                        
+                        <div class="case-study-section">
+                            <h3>Weekly Performance Context</h3>
+                            <div class="chart-container">
+                                <canvas id="weeklyChart"></canvas>
+                            </div>
+                            <p class="figure-caption">Figure 3: Weekly performance highlighting June 12, 2024</p>
+                        </div>
+
+                        <div class="case-study-section">
+                            <h3>Transaction Analysis</h3>
+                            <p>On this date, 247 transactions were recorded, representing a 34% increase over the weekly average. The distribution included:</p>
+                            <ul>
+                                <li>High-value transactions (>$500): 23% of total</li>
+                                <li>Mid-range transactions ($100-$500): 45% of total</li>
+                                <li>Standard transactions (<$100): 32% of total</li>
+                            </ul>
+                        </div>
+
+                        <div class="case-study-section">
+                            <h3>Contributing Factors</h3>
+                            <p>Several factors contributed to this exceptional performance:</p>
+                            <ul>
+                                <li>Seasonal promotional campaign launch</li>
+                                <li>Regional market expansion announcement</li>
+                                <li>Strategic partnership activation</li>
+                            </ul>
+                        </div>
+
+                        <div class="case-study-section">
+                            <h3>Impact and Reflection</h3>
+                            <p>This single-day performance represented a significant milestone, demonstrating the potential for sustained growth when multiple strategic initiatives align. The data point serves as both a benchmark and a case study for future planning.</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>© 2024 Research Project. All data visualization methods and findings presented herein.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
