@@ -23,7 +23,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Initialize visualizations when tab becomes active
             if (targetTab === 'map') {
-                initMap();
+                // Small delay to ensure tab panel is visible before initializing map
+                setTimeout(() => {
+                    initMap();
+                }, 100);
             } else if (targetTab === 'timeline') {
                 initTimeline();
             }
@@ -33,6 +36,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize charts
     initRevenueChart();
     initWeeklyChart();
+    
+    // Initialize map if map tab is active by default
+    const activeTab = document.querySelector('.tab-button.active');
+    if (activeTab && activeTab.getAttribute('data-tab') === 'map') {
+        setTimeout(() => {
+            initMap();
+        }, 300);
+    }
 });
 
 // Revenue Chart
@@ -186,6 +197,9 @@ function initMap() {
 
     // Initialize map if not already done
     if (!map) {
+        // Clear any existing content (remove dummy SVG if present)
+        mapContainer.innerHTML = '';
+        
         // Center on Bedford-Stuyvesant, Brooklyn
         map = L.map('map-visualization').setView([40.686, -73.944], 13);
 
@@ -197,6 +211,20 @@ function initMap() {
 
         // Create marker layer group
         markers = L.layerGroup().addTo(map);
+        
+        // Invalidate size to ensure proper rendering
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+            }
+        }, 200);
+    } else {
+        // If map already exists, just invalidate size and reload data
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+            }
+        }, 100);
     }
 
     // Load CSV data
