@@ -319,13 +319,15 @@ body {
     font-size: 1.125rem;
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
+    line-height: 1.0;
 }
 
 .popup-content p {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
     font-size: 0.875rem;
     color: #475569;
+    line-height: 1.0;
 }
 
 .popup-content .address {
