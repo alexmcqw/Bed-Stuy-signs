@@ -282,11 +282,21 @@ async function loadCSVData() {
         const parsed = Papa.parse(csvText, {
             header: true,
             skipEmptyLines: true,
-            dynamicTyping: true
+            dynamicTyping: false  // Keep as strings to preserve values
         });
 
         if (parsed.errors.length > 0) {
             console.warn('CSV parsing errors:', parsed.errors);
+        }
+
+        // Debug: Check first few rows with photos
+        console.log('CSV parsed. Total rows:', parsed.data.length);
+        if (parsed.data.length > 0) {
+            const sampleRow = parsed.data.find(r => r['Photo_URL'] && r['Photo_URL'].trim());
+            if (sampleRow) {
+                console.log('Sample row keys with "Predicted":', Object.keys(sampleRow).filter(k => k.includes('Predicted')));
+                console.log('Sample row Predicted Class value:', sampleRow['Predicted Class']);
+            }
         }
 
         createMarkers(parsed.data);
@@ -327,9 +337,16 @@ function createMarkers(rows) {
             }
 
             // Get prediction data
-            let predictedClass = row['Predicted Class'] || '';
+            // Try multiple possible column name variations
+            let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
+            
+            // Convert to string and trim
+            predictedClass = String(predictedClass || '').trim();
+            
             // Remove leading numeral (0 or 1) and space from Predicted Class
-            predictedClass = predictedClass.replace(/^[01]\s*/, '');
+            if (predictedClass) {
+                predictedClass = predictedClass.replace(/^[01]\s+/, '');  // Match one or more spaces after 0/1
+            }
             
             const confidence = parseFloat(row['Prediction Confidence']) || 0;
             const oldSchoolProb = parseFloat(row['Old-school Probability']) || 0;
