@@ -520,12 +520,14 @@ body {
     transform: translateY(-50%);
 }
 
-.timeline-line.traditional {
-    background-color: #334155;
+.timeline-line.traditional,
+.timeline-line.old-school {
+    background-color: #8B6F47; /* Brown for old-school */
 }
 
-.timeline-line.modern {
-    background-color: #94a3b8;
+.timeline-line.modern,
+.timeline-line.new-school {
+    background-color: #E91E63; /* Pink for new-school */
 }
 
 .timeline-dot {
