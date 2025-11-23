@@ -362,7 +362,7 @@ function createMarkers(rows) {
             const isOldSchool = predictedClass.includes('Old-school') || oldSchoolProb > newSchoolProb;
 
             // Create custom icon based on typography class
-            const iconColor = isOldSchool ? '#334155' : '#64748b';
+            const iconColor = isOldSchool ? '#8B6F47' : '#E91E63'; // Brown for old-school, pink for new-school
             const icon = L.divIcon({
                 className: 'custom-marker',
                 html: `<div style="background-color: ${iconColor}; width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
