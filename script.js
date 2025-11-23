@@ -214,18 +214,14 @@ function initMap() {
             // Center on Bedford-Stuyvesant, Brooklyn
             map = L.map('map-visualization').setView([40.686, -73.944], 13);
 
-            // Remove any existing tile layers first
-            map.eachLayer(function(layer) {
-                if (layer instanceof L.TileLayer) {
-                    map.removeLayer(layer);
-                }
-            });
-
             // Add CartoDB Positron tiles (light grey, matches signmap style)
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            const cartoTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> contributors',
-                maxZoom: 19
-            }).addTo(map);
+                maxZoom: 19,
+                subdomains: 'abcd'
+            });
+            cartoTiles.addTo(map);
+            console.log('CartoDB Positron tiles added to map');
 
             // Create marker layer group
             markers = L.layerGroup().addTo(map);
