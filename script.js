@@ -363,9 +363,20 @@ function createMarkers(rows) {
 
             // Create custom icon based on typography class
             const iconColor = isOldSchool ? '#8B6F47' : '#E91E63'; // Brown for old-school, pink for new-school
+            
+            // Determine border color based on status
+            let borderColor = 'white'; // Default
+            if (status && status.toLowerCase() === 'closed') {
+                // Remove white border for closed (use same color as background)
+                borderColor = iconColor;
+            } else if (status && status.toLowerCase() === 'new') {
+                // Use darker version of pin color for new status
+                borderColor = isOldSchool ? '#5A4A2F' : '#B71C1C'; // Darker brown or darker pink
+            }
+            
             const icon = L.divIcon({
                 className: 'custom-marker',
-                html: `<div style="background-color: ${iconColor}; width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                html: `<div style="background-color: ${iconColor}; width: 10px; height: 10px; border-radius: 50%; border: 2px solid ${borderColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
                 iconSize: [10, 10],
                 iconAnchor: [5, 5]
             });
