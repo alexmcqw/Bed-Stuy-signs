@@ -593,6 +593,13 @@ async function initTimeline() {
         if (!photoUrl || photoUrl.trim() === '') return;
 
         const status = row['Status_simplified'] || '';
+        
+        // Filter out rows that don't have 'new' or 'closed' status
+        const statusLower = status.toLowerCase();
+        if (statusLower !== 'new' && statusLower !== 'closed') {
+            return;
+        }
+        
         const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || 
                     row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 
                     'Unknown';
