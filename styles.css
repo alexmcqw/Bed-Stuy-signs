@@ -408,12 +408,13 @@ body {
 
 .timeline-visualization {
     width: 100%;
-    min-height: 800px;
+    max-height: 80vh;
     background-color: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 2rem;
     padding-bottom: 4rem; /* Extra space for fixed axis */
+    overflow-y: auto;
     overflow-x: auto;
     position: relative;
 }
@@ -569,12 +570,14 @@ body {
 .timeline-axis-container {
     position: sticky;
     bottom: 0;
-    left: 0;
-    right: 0;
     background-color: #f8fafc;
     border-top: 2px solid #cbd5e1;
     padding: 1rem 0;
     margin-top: 1rem;
+    margin-left: -2rem;
+    margin-right: -2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
     z-index: 10;
     display: flex;
     align-items: center;
