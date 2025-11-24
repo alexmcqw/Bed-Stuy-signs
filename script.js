@@ -583,7 +583,7 @@ async function initTimeline() {
     
     // Process data into timeline items
     const stores = [];
-    const minYear = 2000;
+    const minYear = 2015;
     const maxYear = 2024;
     const yearRange = maxYear - minYear;
 
@@ -678,9 +678,9 @@ async function initTimeline() {
         const lineContainer = document.createElement('div');
         lineContainer.className = 'timeline-line-container';
 
-        // Calculate positions (2000-2024 = 24 years)
-        const startPercent = ((store.startYear - 2000) / 24) * 100;
-        const endPercent = ((store.endYear - 2000) / 24) * 100;
+        // Calculate positions (2015-2024 = 9 years)
+        const startPercent = ((store.startYear - minYear) / yearRange) * 100;
+        const endPercent = ((store.endYear - minYear) / yearRange) * 100;
         const width = endPercent - startPercent;
 
         // Line
