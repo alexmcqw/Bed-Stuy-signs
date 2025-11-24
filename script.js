@@ -715,38 +715,31 @@ async function initTimeline() {
 
         item.appendChild(lineContainer);
 
-        // Years display
-        const yearsDiv = document.createElement('div');
-        yearsDiv.className = 'timeline-years';
-        const startYearDisplay = store.startYear === minYear ? '—' : store.startYear;
-        const endYearDisplay = store.endYear === maxYear ? '—' : store.endYear;
-        yearsDiv.innerHTML = `
-            <span>${startYearDisplay}</span>
-            <span>${endYearDisplay}</span>
-        `;
-        item.appendChild(yearsDiv);
-
         // Hover tooltip
         item.title = `${store.name}: ${store.startYear}-${store.endYear} (${store.isOpen ? 'Open' : 'Closed'})`;
 
         timelineContainer.appendChild(item);
     });
 
-    // Add year labels at the top
-    const yearLabels = document.createElement('div');
-    yearLabels.style.display = 'flex';
-    yearLabels.style.justifyContent = 'space-between';
-    yearLabels.style.padding = '0 150px 0 150px';
-    yearLabels.style.marginBottom = '1rem';
-    yearLabels.style.fontSize = '0.75rem';
-    yearLabels.style.color = '#64748b';
-
-    for (let year = 2000; year <= 2024; year += 4) {
-        const label = document.createElement('span');
-        label.textContent = year;
-        yearLabels.appendChild(label);
+    // Create fixed bottom axis with year labels
+    const axisContainer = document.createElement('div');
+    axisContainer.className = 'timeline-axis-container';
+    
+    const axis = document.createElement('div');
+    axis.className = 'timeline-axis';
+    
+    // Generate year labels (every 2 years for readability)
+    // Need to account for the same padding/margin as timeline items
+    for (let year = minYear; year <= maxYear; year += 2) {
+        const yearLabel = document.createElement('div');
+        yearLabel.className = 'timeline-axis-label';
+        yearLabel.textContent = year;
+        const percent = ((year - minYear) / yearRange) * 100;
+        yearLabel.style.left = percent + '%';
+        axis.appendChild(yearLabel);
     }
-
-    timelineContainer.insertBefore(yearLabels, timelineContainer.firstChild);
+    
+    axisContainer.appendChild(axis);
+    timelineContainer.appendChild(axisContainer);
 }
 

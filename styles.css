@@ -413,7 +413,9 @@ body {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 2rem;
+    padding-bottom: 4rem; /* Extra space for fixed axis */
     overflow-x: auto;
+    position: relative;
 }
 
 /* Case Study Section */
@@ -564,11 +566,34 @@ body {
     background-color: #ef4444;
 }
 
-.timeline-years {
-    min-width: 200px;
+.timeline-axis-container {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #f8fafc;
+    border-top: 2px solid #cbd5e1;
+    padding: 1rem 0;
+    margin-top: 1rem;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+}
+
+.timeline-axis {
+    position: relative;
+    height: 40px;
+    flex: 1;
+    margin-left: 150px; /* Match timeline-store-name width */
+    margin-right: 1rem; /* Match timeline-item margin */
+}
+
+.timeline-axis-label {
+    position: absolute;
+    transform: translateX(-50%);
     font-size: 0.75rem;
     color: #64748b;
-    display: flex;
-    justify-content: space-between;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
