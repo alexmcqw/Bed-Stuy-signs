@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 100);
             } else if (targetTab === 'timeline') {
                 initTimeline();
+            } else if (targetTab === 'background') {
+                initRegressionAnalysis();
             }
         });
     });
@@ -741,5 +743,205 @@ async function initTimeline() {
     
     axisContainer.appendChild(axis);
     timelineContainer.appendChild(axisContainer);
+}
+
+// Regression Analysis
+async function initRegressionAnalysis() {
+    const resultsContainer = document.getElementById('regression-results');
+    if (!resultsContainer) return;
+
+    // Check if already loaded
+    if (resultsContainer.querySelector('.regression-content')) {
+        return;
+    }
+
+    try {
+        // Load CSV data
+        const response = await fetch('data.csv');
+        if (!response.ok) {
+            throw new Error('Failed to load CSV data');
+        }
+
+        const csvText = await response.text();
+        const parsed = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: false
+        });
+
+        // Process data for regression
+        const data = parsed.data.filter(row => {
+            const status = (row['Status_simplified'] || '').toLowerCase();
+            const predictedClass = (row['Predicted Class'] || '').trim().replace(/^[01]\s+/, '');
+            return (status === 'new' || status === 'closed') && predictedClass;
+        });
+
+        // Create contingency table
+        const contingency = {
+            'old-school': { 'closed': 0, 'new': 0 },
+            'new-school': { 'closed': 0, 'new': 0 }
+        };
+
+        data.forEach(row => {
+            const status = (row['Status_simplified'] || '').toLowerCase();
+            let predictedClass = (row['Predicted Class'] || '').trim().replace(/^[01]\s+/, '');
+            const isOldSchool = predictedClass.toLowerCase().includes('old-school');
+            const typography = isOldSchool ? 'old-school' : 'new-school';
+            
+            if (status === 'closed' || status === 'new') {
+                contingency[typography][status]++;
+            }
+        });
+
+        // Calculate statistics
+        const oldSchoolClosed = contingency['old-school']['closed'];
+        const oldSchoolNew = contingency['old-school']['new'];
+        const newSchoolClosed = contingency['new-school']['closed'];
+        const newSchoolNew = contingency['new-school']['new'];
+
+        const totalOldSchool = oldSchoolClosed + oldSchoolNew;
+        const totalNewSchool = newSchoolClosed + newSchoolNew;
+        const totalClosed = oldSchoolClosed + newSchoolClosed;
+        const totalNew = oldSchoolNew + newSchoolNew;
+        const total = totalOldSchool + totalNewSchool;
+
+        // Calculate proportions
+        const oldSchoolClosedPct = totalOldSchool > 0 ? (oldSchoolClosed / totalOldSchool * 100).toFixed(1) : 0;
+        const oldSchoolNewPct = totalOldSchool > 0 ? (oldSchoolNew / totalOldSchool * 100).toFixed(1) : 0;
+        const newSchoolClosedPct = totalNewSchool > 0 ? (newSchoolClosed / totalNewSchool * 100).toFixed(1) : 0;
+        const newSchoolNewPct = totalNewSchool > 0 ? (newSchoolNew / totalNewSchool * 100).toFixed(1) : 0;
+
+        // Calculate odds ratio
+        const oddsOldSchoolClosed = oldSchoolClosed / oldSchoolNew;
+        const oddsNewSchoolClosed = newSchoolClosed / newSchoolNew;
+        const oddsRatio = (oddsOldSchoolClosed / oddsNewSchoolClosed).toFixed(2);
+
+        // Chi-square test (simplified calculation)
+        const expectedOldSchoolClosed = (totalOldSchool * totalClosed) / total;
+        const expectedOldSchoolNew = (totalOldSchool * totalNew) / total;
+        const expectedNewSchoolClosed = (totalNewSchool * totalClosed) / total;
+        const expectedNewSchoolNew = (totalNewSchool * totalNew) / total;
+
+        const chiSquare = (
+            Math.pow(oldSchoolClosed - expectedOldSchoolClosed, 2) / expectedOldSchoolClosed +
+            Math.pow(oldSchoolNew - expectedOldSchoolNew, 2) / expectedOldSchoolNew +
+            Math.pow(newSchoolClosed - expectedNewSchoolClosed, 2) / expectedNewSchoolClosed +
+            Math.pow(newSchoolNew - expectedNewSchoolNew, 2) / expectedNewSchoolNew
+        ).toFixed(3);
+
+        // Create results HTML
+        resultsContainer.innerHTML = `
+            <div class="regression-content">
+                <h3>Contingency Table</h3>
+                <div class="regression-table-container">
+                    <table class="regression-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Closed</th>
+                                <th>New</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Old-school</strong></td>
+                                <td>${oldSchoolClosed} (${oldSchoolClosedPct}%)</td>
+                                <td>${oldSchoolNew} (${oldSchoolNewPct}%)</td>
+                                <td>${totalOldSchool}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>New-school</strong></td>
+                                <td>${newSchoolClosed} (${newSchoolClosedPct}%)</td>
+                                <td>${newSchoolNew} (${newSchoolNewPct}%)</td>
+                                <td>${totalNewSchool}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total</strong></td>
+                                <td>${totalClosed}</td>
+                                <td>${totalNew}</td>
+                                <td>${total}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Key Findings</h3>
+                <div class="regression-stats">
+                    <div class="stat-card">
+                        <h4>Odds Ratio</h4>
+                        <p class="stat-value">${oddsRatio}</p>
+                        <p class="stat-explanation">Old-school businesses are ${oddsRatio}x more likely to be closed than new-school businesses.</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Chi-Square</h4>
+                        <p class="stat-value">${chiSquare}</p>
+                        <p class="stat-explanation">Test statistic for independence between status and typography class.</p>
+                    </div>
+                </div>
+
+                <h3>Visualization</h3>
+                <div class="chart-container">
+                    <canvas id="regressionChart"></canvas>
+                </div>
+            </div>
+        `;
+
+        // Create chart
+        const ctx = document.getElementById('regressionChart');
+        if (ctx && typeof Chart !== 'undefined') {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Old-school', 'New-school'],
+                    datasets: [
+                        {
+                            label: 'Closed',
+                            data: [oldSchoolClosed, newSchoolClosed],
+                            backgroundColor: '#ef4444',
+                            borderColor: '#dc2626',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'New',
+                            data: [oldSchoolNew, newSchoolNew],
+                            backgroundColor: '#10b981',
+                            borderColor: '#059669',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 50
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Business Status by Typography Class'
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error performing regression analysis:', error);
+        resultsContainer.innerHTML = `
+            <div class="regression-error">
+                <p>Error loading regression analysis: ${error.message}</p>
+            </div>
+        `;
+    }
 }
 
