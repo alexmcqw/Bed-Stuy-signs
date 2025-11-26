@@ -243,26 +243,6 @@ body {
     overflow: hidden;
 }
 
-/* Leaflet map container */
-#map-visualization.leaflet-container {
-    border-radius: 8px;
-    z-index: 1;
-}
-
-.map-stats {
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background-color: #f8fafc;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    font-size: 0.875rem;
-    color: #475569;
-}
-
-.map-stats p {
-    margin-bottom: 0.25rem;
-}
-
 .map-legend {
     display: flex;
     gap: 2rem;
@@ -271,13 +251,6 @@ body {
     background-color: #f8fafc;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    flex-wrap: wrap;
-}
-
-.legend-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
 }
 
 .legend-item {
@@ -303,99 +276,6 @@ body {
     background-color: #94a3b8;
 }
 
-.legend-color.old-school {
-    background-color: #8B6F47;
-}
-
-.legend-color.new-school {
-    background-color: #E91E63;
-}
-
-.legend-marker {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.legend-marker.old-school {
-    background-color: #8B6F47;
-}
-
-.legend-marker.new-school {
-    background-color: #E91E63;
-}
-
-.legend-marker.closed.old-school {
-    border: 2px solid #8B6F47; /* Same as background (no visible border) */
-}
-
-.legend-marker.closed.new-school {
-    border: 2px solid #E91E63; /* Same as background (no visible border) */
-}
-
-.legend-marker.new.old-school {
-    border: 2px solid #5A4A2F; /* Darker brown border */
-}
-
-.legend-marker.new.new-school {
-    border: 2px solid #B71C1C; /* Darker pink border */
-}
-
-/* Leaflet popup styles */
-.leaflet-popup-content-wrapper {
-    border-radius: 8px;
-    font-family: inherit;
-}
-
-.leaflet-popup-content {
-    margin: 1rem;
-    min-width: 200px;
-}
-
-.popup-content h3 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 0.125rem;
-    line-height: 1.0;
-}
-
-.popup-content p {
-    margin-bottom: 0.125rem;
-    font-size: 0.875rem;
-    color: #475569;
-    line-height: 1.0;
-}
-
-.popup-content .address {
-    font-weight: 500;
-    color: #334155;
-}
-
-.popup-content .confidence {
-    font-size: 0.75rem;
-    color: #64748b;
-    font-style: italic;
-}
-
-.popup-image-container {
-    margin: 0.5rem 0;
-    text-align: center;
-}
-
-.popup-thumbnail {
-    max-width: 200px;
-    max-height: 150px;
-    width: auto;
-    height: auto;
-    border-radius: 4px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    object-fit: cover;
-}
-
 .map-description {
     margin-top: 1.5rem;
     color: #475569;
@@ -408,15 +288,12 @@ body {
 
 .timeline-visualization {
     width: 100%;
-    max-height: 80vh;
+    min-height: 800px;
     background-color: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 2rem;
-    padding-bottom: 4rem; /* Extra space for fixed axis */
-    overflow-y: auto;
     overflow-x: auto;
-    position: relative;
 }
 
 /* Case Study Section */
@@ -523,14 +400,12 @@ body {
     transform: translateY(-50%);
 }
 
-.timeline-line.traditional,
-.timeline-line.old-school {
-    background-color: #8B6F47; /* Brown for old-school */
+.timeline-line.traditional {
+    background-color: #334155;
 }
 
-.timeline-line.modern,
-.timeline-line.new-school {
-    background-color: #E91E63; /* Pink for new-school */
+.timeline-line.modern {
+    background-color: #94a3b8;
 }
 
 .timeline-dot {
@@ -551,14 +426,6 @@ body {
     right: 0;
 }
 
-.timeline-dot.old-school {
-    background-color: #8B6F47; /* Brown for old-school */
-}
-
-.timeline-dot.new-school {
-    background-color: #E91E63; /* Pink for new-school */
-}
-
 .timeline-dot.open {
     background-color: #10b981;
 }
@@ -567,37 +434,12 @@ body {
     background-color: #ef4444;
 }
 
-.timeline-axis-container {
-    position: sticky;
-    bottom: 0;
-    background-color: #f8fafc;
-    border-top: 2px solid #cbd5e1;
-    padding: 1rem 0;
-    margin-top: 1rem;
-    margin-left: -2rem;
-    margin-right: -2rem;
-    padding-left: 2rem;
-    padding-right: 2rem;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-}
-
-.timeline-axis {
-    position: relative;
-    height: 40px;
-    flex: 1;
-    margin-left: 150px; /* Match timeline-store-name width */
-    margin-right: 1rem; /* Match timeline-item margin */
-}
-
-.timeline-axis-label {
-    position: absolute;
-    transform: translateX(-50%);
+.timeline-years {
+    min-width: 200px;
     font-size: 0.75rem;
     color: #64748b;
-    font-weight: 500;
-    white-space: nowrap;
+    display: flex;
+    justify-content: space-between;
 }
 
 /* Regression Analysis Styles */
@@ -609,6 +451,19 @@ body {
 
 .regression-content {
     margin-top: 2rem;
+}
+
+.regression-content h3 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #1e293b;
+}
+
+.regression-content h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    color: #334155;
 }
 
 .regression-table-container {
@@ -687,5 +542,44 @@ body {
     border: 1px solid #fecaca;
     border-radius: 8px;
     color: #991b1b;
+}
+
+.visualization-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.viz-container {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.viz-container h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: #334155;
+    font-weight: 600;
+}
+
+.viz-container canvas {
+    max-height: 300px;
+}
+
+#flowDiagram {
+    width: 100%;
+    min-height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#flowDiagram svg {
+    max-width: 100%;
+    height: auto;
 }
 

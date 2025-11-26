@@ -23,10 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Initialize visualizations when tab becomes active
             if (targetTab === 'map') {
-                // Small delay to ensure tab panel is visible before initializing map
-                setTimeout(() => {
-                    initMap();
-                }, 100);
+                initMap();
             } else if (targetTab === 'timeline') {
                 initTimeline();
             } else if (targetTab === 'background') {
@@ -38,14 +35,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize charts
     initRevenueChart();
     initWeeklyChart();
-    
-    // Initialize map if map tab is active by default
-    const activeTab = document.querySelector('.tab-button.active');
-    if (activeTab && activeTab.getAttribute('data-tab') === 'map') {
-        setTimeout(() => {
-            initMap();
-        }, 300);
-    }
 });
 
 // Revenue Chart
@@ -189,481 +178,122 @@ function initWeeklyChart() {
     });
 }
 
-// Map Visualization with Leaflet
-let map = null;
-let markers = null;
-
+// Map Visualization
 function initMap() {
     const mapContainer = document.getElementById('map-visualization');
-    if (!mapContainer) {
-        console.error('Map container not found');
-        return;
+    if (!mapContainer || mapContainer.dataset.initialized === 'true') return;
+
+    // Clear any existing content
+    mapContainer.innerHTML = '';
+    mapContainer.dataset.initialized = 'true';
+
+    // Create SVG for Brooklyn outline (simplified)
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.setAttribute('viewBox', '0 0 800 600');
+    svg.style.position = 'absolute';
+    svg.style.top = '0';
+    svg.style.left = '0';
+
+    // Simplified Brooklyn outline (polygon approximation)
+    const brooklynPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    brooklynPath.setAttribute('d', 'M 100 100 L 700 80 L 750 200 L 720 400 L 600 550 L 200 520 L 80 350 Z');
+    brooklynPath.setAttribute('fill', '#ffffff');
+    brooklynPath.setAttribute('stroke', '#cbd5e1');
+    brooklynPath.setAttribute('stroke-width', '2');
+    svg.appendChild(brooklynPath);
+
+    mapContainer.appendChild(svg);
+
+    // Generate 300 random pinpoints
+    const traditionalCount = 150;
+    const modernCount = 150;
+    let traditionalPlaced = 0;
+    let modernPlaced = 0;
+
+    // Function to check if point is within Brooklyn bounds (simplified)
+    function isInBrooklyn(x, y) {
+        // Simple bounding box check
+        return x > 100 && x < 700 && y > 80 && y < 520;
     }
 
-    // Check if Leaflet is loaded
-    if (typeof L === 'undefined') {
-        console.error('Leaflet library not loaded');
-        mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error: Leaflet map library failed to load. Please refresh the page.</p>';
-        return;
-    }
-
-    // Initialize map if not already done
-    if (!map) {
-        // Clear any existing content (remove dummy SVG if present)
-        mapContainer.innerHTML = '';
+    // Generate traditional pins
+    while (traditionalPlaced < traditionalCount) {
+        const x = Math.random() * 600 + 100;
+        const y = Math.random() * 440 + 80;
         
-        try {
-            // Center on Bedford-Stuyvesant, Brooklyn
-            map = L.map('map-visualization').setView([40.686, -73.944], 13);
-        } catch (error) {
-            console.error('Error creating map:', error);
-            return;
+        if (isInBrooklyn(x, y)) {
+            const pin = document.createElement('div');
+            pin.className = 'map-pin traditional';
+            pin.style.left = (x / 800 * 100) + '%';
+            pin.style.top = (y / 600 * 100) + '%';
+            pin.title = 'Traditional Typography Storefront';
+            mapContainer.appendChild(pin);
+            traditionalPlaced++;
         }
     }
 
-    // Always ensure CartoDB tiles are used (remove old tiles if present)
-    try {
-        // Remove any existing tile layers
-        map.eachLayer(function(layer) {
-            if (layer instanceof L.TileLayer) {
-                map.removeLayer(layer);
-            }
-        });
-
-        // Add CartoDB Positron tiles (light grey, matches signmap style)
-        const cartoTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> contributors',
-            maxZoom: 19,
-            subdomains: 'abcd'
-        });
-        cartoTiles.addTo(map);
-        console.log('CartoDB Positron tiles added to map');
-
-        // Create marker layer group if it doesn't exist
-        if (!markers) {
-            markers = L.layerGroup().addTo(map);
-        }
+    // Generate modern pins
+    while (modernPlaced < modernCount) {
+        const x = Math.random() * 600 + 100;
+        const y = Math.random() * 440 + 80;
         
-        console.log('Leaflet map initialized successfully');
-        
-        // Invalidate size to ensure proper rendering
-        setTimeout(() => {
-            if (map) {
-                map.invalidateSize();
-            }
-        }, 200);
-    } catch (error) {
-        console.error('Error setting up map tiles:', error);
-        if (mapContainer) {
-            mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error loading map tiles. Please check the console for details.</p>';
-        }
-        return;
-    }
-
-    if (map) {
-        // If map already exists, just invalidate size and reload data
-        setTimeout(() => {
-            if (map) {
-                map.invalidateSize();
-            }
-        }, 100);
-    }
-
-    // Load CSV data
-    loadCSVData();
-}
-
-async function loadCSVData() {
-    try {
-        const response = await fetch('data.csv');
-        if (!response.ok) {
-            throw new Error('Failed to load CSV data');
-        }
-
-        const csvText = await response.text();
-        const parsed = Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            dynamicTyping: false  // Keep as strings to preserve values
-        });
-
-        if (parsed.errors.length > 0) {
-            console.warn('CSV parsing errors:', parsed.errors);
-        }
-
-        // Debug: Check first few rows with photos
-        console.log('CSV parsed. Total rows:', parsed.data.length);
-        if (parsed.data.length > 0) {
-            const sampleRow = parsed.data.find(r => r['Photo_URL'] && r['Photo_URL'].trim());
-            if (sampleRow) {
-                console.log('Sample row keys with "Predicted":', Object.keys(sampleRow).filter(k => k.includes('Predicted')));
-                console.log('Sample row Predicted Class value:', sampleRow['Predicted Class']);
-            }
-        }
-
-        createMarkers(parsed.data);
-    } catch (error) {
-        console.error('Error loading CSV:', error);
-        const mapContainer = document.getElementById('map-visualization');
-        if (mapContainer) {
-            mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error loading map data. Please ensure data.csv is available.</p>';
+        if (isInBrooklyn(x, y)) {
+            const pin = document.createElement('div');
+            pin.className = 'map-pin modern';
+            pin.style.left = (x / 800 * 100) + '%';
+            pin.style.top = (y / 600 * 100) + '%';
+            pin.title = 'Modern Typography Storefront';
+            mapContainer.appendChild(pin);
+            modernPlaced++;
         }
     }
-}
 
-function createMarkers(rows) {
-    if (!markers) return;
-
-    // Clear existing markers
-    markers.clearLayers();
-
-    let oldSchoolCount = 0;
-    let newSchoolCount = 0;
-    let totalCount = 0;
-
-    rows.forEach(row => {
-        try {
-            // Get coordinates
-            const lat = parseFloat(row['LiveXYZSeptember132025_XYTableToPoint_entrances_main_lat']);
-            const lng = parseFloat(row['LiveXYZSeptember132025_XYTableToPoint_entrances_main_lon']);
-
-            // Skip if coordinates are invalid
-            if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
-                return;
-            }
-
-            // Get photo URL and skip if no image
-            const photoUrl = row['Photo_URL'] || '';
-            if (!photoUrl || photoUrl.trim() === '') {
-                return; // Skip markers without images
-            }
-
-            // Get prediction data
-            // Try multiple possible column name variations
-            let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
-            
-            // Convert to string and trim
-            predictedClass = String(predictedClass || '').trim();
-            
-            // Remove leading numeral (0 or 1) and space from Predicted Class
-            if (predictedClass) {
-                predictedClass = predictedClass.replace(/^[01]\s+/, '');  // Match one or more spaces after 0/1
-            }
-            
-            const confidence = parseFloat(row['Prediction Confidence']) || 0;
-            const oldSchoolProb = parseFloat(row['Old-school Probability']) || 0;
-            const newSchoolProb = parseFloat(row['New-school Probability']) || 0;
-            const status = row['Status_simplified'] || '';
-            const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 'Unknown';
-            const address = row['LiveXYZSeptember132025_XYTableToPoint_address'] || '';
-            const postcode = row['LiveXYZSeptember132025_XYTableToPoint_postcode'] || '';
-            const category = row['LiveXYZSeptember132025_XYTableToPoint_subcategoriesPrimary_name'] || 
-                           row['LiveXYZSeptember132025_XYTableToPoint_categoriesPrimary_name'] || '';
-
-            // Determine if Old-school or New-school
-            const isOldSchool = predictedClass.includes('Old-school') || oldSchoolProb > newSchoolProb;
-
-            // Create custom icon based on typography class
-            const iconColor = isOldSchool ? '#8B6F47' : '#E91E63'; // Brown for old-school, pink for new-school
-            
-            // Determine border color based on status
-            let borderColor = 'white'; // Default
-            if (status && status.toLowerCase() === 'closed') {
-                // Remove white border for closed (use same color as background)
-                borderColor = iconColor;
-            } else if (status && status.toLowerCase() === 'new') {
-                // Use darker version of pin color for new status
-                borderColor = isOldSchool ? '#5A4A2F' : '#B71C1C'; // Darker brown or darker pink
-            }
-            
-            const icon = L.divIcon({
-                className: 'custom-marker',
-                html: `<div style="background-color: ${iconColor}; width: 10px; height: 10px; border-radius: 50%; border: 2px solid ${borderColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-                iconSize: [10, 10],
-                iconAnchor: [5, 5]
-            });
-
-            // Create marker
-            const marker = L.marker([lat, lng], { icon: icon });
-
-            // Create popup content
-            let popupContent = '<div class="popup-content">';
-            popupContent += `<h3>${name}</h3>`;
-            
-            // Add storefront image thumbnail
-            if (photoUrl) {
-                popupContent += `<div class="popup-image-container"><img src="${photoUrl}" alt="${name}" class="popup-thumbnail" onerror="this.style.display='none'"></div>`;
-            }
-            
-            if (address) {
-                popupContent += `<p class="address"><strong>Address:</strong> ${address}`;
-                if (postcode) {
-                    popupContent += `, ${postcode}`;
-                }
-                popupContent += '</p>';
-            }
-
-            if (category) {
-                popupContent += `<p><strong>Category:</strong> ${category}</p>`;
-            }
-
-            if (status) {
-                popupContent += `<p><strong>Status:</strong> ${status}</p>`;
-            }
-
-            popupContent += `<p><strong>Predicted Class:</strong> ${predictedClass || 'N/A'}</p>`;
-
-            popupContent += '</div>';
-
-            // Bind popup with auto-positioning options
-            const popup = L.popup({
-                autoPan: true,
-                autoPanPadding: [50, 50],
-                autoPanPaddingTopLeft: [50, 50],
-                autoPanPaddingBottomRight: [50, 50],
-                closeOnClick: false,
-                autoClose: true,  // Only allow one popup at a time
-                maxWidth: 300
-            }).setContent(popupContent);
-
-            marker.bindPopup(popup);
-
-            // Add event listener to adjust popup position based on viewport
-            marker.on('popupopen', function() {
-                setTimeout(() => {
-                    const openPopup = marker.getPopup();
-                    if (openPopup && openPopup.isOpen()) {
-                        const popupElement = openPopup.getElement();
-                        if (!popupElement) return;
-                        
-                        const markerLatLng = marker.getLatLng();
-                        const mapPixelPoint = map.latLngToContainerPoint(markerLatLng);
-                        const mapSize = map.getSize();
-                        
-                        // Get actual popup dimensions
-                        const popupRect = popupElement.getBoundingClientRect();
-                        const mapRect = map.getContainer().getBoundingClientRect();
-                        const popupWidth = popupRect.width;
-                        const popupHeight = popupRect.height;
-                        
-                        // Calculate available space in each direction
-                        const spaceAbove = mapPixelPoint.y;
-                        const spaceBelow = mapSize.y - mapPixelPoint.y;
-                        const spaceLeft = mapPixelPoint.x;
-                        const spaceRight = mapSize.x - mapPixelPoint.x;
-                        
-                        // Determine best popup direction
-                        let direction = 'top'; // Default
-                        if (spaceAbove < popupHeight + 20 && spaceBelow > popupHeight + 20) {
-                            direction = 'bottom';
-                        } else if (spaceAbove < popupHeight + 20 && spaceBelow < popupHeight + 20) {
-                            // Not enough space above or below, try sides
-                            if (spaceRight > popupWidth + 20) {
-                                direction = 'right';
-                            } else if (spaceLeft > popupWidth + 20) {
-                                direction = 'left';
-                            } else if (spaceBelow > spaceAbove) {
-                                direction = 'bottom';
-                            }
-                        }
-                        
-                        // Update popup direction by manipulating classes
-                        const wrapper = popupElement.querySelector('.leaflet-popup-content-wrapper');
-                        const tip = popupElement.querySelector('.leaflet-popup-tip');
-                        
-                        if (wrapper && tip) {
-                            // Remove all direction classes
-                            ['top', 'bottom', 'left', 'right'].forEach(dir => {
-                                wrapper.classList.remove(`leaflet-popup-${dir}`);
-                                tip.classList.remove(`leaflet-popup-tip-${dir}`);
-                            });
-                            
-                            // Add new direction classes
-                            wrapper.classList.add(`leaflet-popup-${direction}`);
-                            tip.classList.add(`leaflet-popup-tip-${direction}`);
-                            
-                            // Force update popup position
-                            openPopup.update();
-                        }
-                    }
-                }, 50);
-            });
-
-            markers.addLayer(marker);
-
-            // Update counts
-            totalCount++;
-            if (isOldSchool) {
-                oldSchoolCount++;
-            } else {
-                newSchoolCount++;
-            }
-        } catch (error) {
-            console.error('Error creating marker for row:', row, error);
-        }
-    });
-
-    // Update stats
-    document.getElementById('total-markers').textContent = totalCount;
-    document.getElementById('old-school-count').textContent = oldSchoolCount;
-    document.getElementById('new-school-count').textContent = newSchoolCount;
-    document.getElementById('traditional-count').textContent = oldSchoolCount;
-    document.getElementById('modern-count').textContent = newSchoolCount;
-
-    // Fit map to markers if we have any
-    if (totalCount > 0 && markers.getLayers().length > 0) {
-        const group = new L.featureGroup(markers.getLayers());
-        map.fitBounds(group.getBounds().pad(0.1));
-    }
+    // Update legend counts
+    document.getElementById('traditional-count').textContent = traditionalCount;
+    document.getElementById('modern-count').textContent = modernCount;
 }
 
 // Timeline Visualization
-let timelineData = null;
-
-async function loadTimelineData() {
-    if (timelineData) return timelineData; // Cache data
-    
-    try {
-        const response = await fetch('data.csv');
-        if (!response.ok) {
-            throw new Error('Failed to load CSV data');
-        }
-
-        const csvText = await response.text();
-        const parsed = Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            dynamicTyping: false
-        });
-
-        timelineData = parsed.data;
-        return timelineData;
-    } catch (error) {
-        console.error('Error loading timeline data:', error);
-        return [];
-    }
-}
-
-function parseDate(dateString) {
-    if (!dateString || dateString.trim() === '') return null;
-    
-    // Try ISO format first (e.g., "2016-12-13T16:30:03Z")
-    if (dateString.includes('T')) {
-        const date = new Date(dateString);
-        return isNaN(date.getTime()) ? null : date;
-    }
-    
-    // Try M/D/YYYY format (e.g., "3/24/2015")
-    const parts = dateString.split('/');
-    if (parts.length === 3) {
-        const month = parseInt(parts[0]) - 1; // Month is 0-indexed
-        const day = parseInt(parts[1]);
-        const year = parseInt(parts[2]);
-        const date = new Date(year, month, day);
-        return isNaN(date.getTime()) ? null : date;
-    }
-    
-    return null;
-}
-
-function getYearFromDate(date) {
-    if (!date) return null;
-    return date.getFullYear();
-}
-
-async function initTimeline() {
+function initTimeline() {
     const timelineContainer = document.getElementById('timeline-visualization');
     if (!timelineContainer || timelineContainer.dataset.initialized === 'true') return;
 
-    timelineContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Loading timeline data...</p>';
+    timelineContainer.innerHTML = '';
     timelineContainer.dataset.initialized = 'true';
 
-    // Load CSV data
-    const data = await loadTimelineData();
-    
-    timelineContainer.innerHTML = '';
-    
-    // Process data into timeline items
+    // Generate 100 stores with random data
     const stores = [];
-    const minYear = 2015;
-    const maxYear = 2024;
-    const yearRange = maxYear - minYear;
+    const storeTypes = [
+        { name: 'Bodega', type: 'traditional' },
+        { name: 'Barbershop', type: 'traditional' },
+        { name: 'Coffee Shop', type: 'modern' },
+        { name: 'Yoga Studio', type: 'modern' },
+        { name: 'Restaurant', type: 'traditional' },
+        { name: 'Boutique', type: 'modern' },
+        { name: 'Hardware Store', type: 'traditional' },
+        { name: 'Cafe', type: 'modern' }
+    ];
 
-    data.forEach(row => {
-        // Only include rows with photos (same filter as map)
-        const photoUrl = row['Photo_URL'] || '';
-        if (!photoUrl || photoUrl.trim() === '') return;
-
-        const status = row['Status_simplified'] || '';
-        
-        // Filter out rows that don't have 'new' or 'closed' status
-        const statusLower = status.toLowerCase();
-        if (statusLower !== 'new' && statusLower !== 'closed') {
-            return;
-        }
-        
-        const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || 
-                    row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 
-                    'Unknown';
-        
-        // Get predicted class and determine if old-school or new-school
-        let predictedClass = row['Predicted Class'] || '';
-        predictedClass = String(predictedClass || '').trim().replace(/^[01]\s+/, '');
-        const isOldSchool = predictedClass.includes('Old-school');
-        const type = isOldSchool ? 'old-school' : 'new-school';
-
-        let startYear = null;
-        let endYear = null;
-        let isOpen = false;
-
-        if (status && status.toLowerCase() === 'closed') {
-            // Closed: no opening date, line extends left to edge
-            // End date is from verifiedTimesLast (column J)
-            const verifiedDate = parseDate(row['LiveXYZSeptember132025_XYTableToPoint_verifiedTimesLast'] || '');
-            endYear = verifiedDate ? getYearFromDate(verifiedDate) : null;
-            startYear = minYear; // Extend to left edge
-            isOpen = false;
-        } else if (status && status.toLowerCase() === 'new') {
-            // New: opening date from spaceCreationDate_short (column P), no closing date
-            const createdDate = parseDate(row['spaceCreationDate_short'] || '');
-            startYear = createdDate ? getYearFromDate(createdDate) : null;
-            endYear = maxYear; // Extend to right edge
-            isOpen = true;
-        } else {
-            // Other statuses: skip for now or handle differently
-            return;
-        }
-
-        // Skip if we don't have valid dates
-        if (!startYear || !endYear) return;
-
-        // Determine the dot date (the date that has the dot)
-        let dotYear = null;
-        if (status && status.toLowerCase() === 'closed') {
-            dotYear = endYear; // Dot is at the end (verified date)
-        } else if (status && status.toLowerCase() === 'new') {
-            dotYear = startYear; // Dot is at the start (creation date)
-        }
+    for (let i = 0; i < 100; i++) {
+        const storeType = storeTypes[Math.floor(Math.random() * storeTypes.length)];
+        const startYear = 2000 + Math.floor(Math.random() * 20);
+        const duration = Math.floor(Math.random() * 15) + 1;
+        const endYear = Math.min(startYear + duration, 2024);
+        const isOpen = endYear === 2024 && Math.random() > 0.3;
 
         stores.push({
-            name: name,
-            type: type,
+            name: `${storeType.name} ${i + 1}`,
+            type: storeType.type,
             startYear: startYear,
             endYear: endYear,
-            isOpen: isOpen,
-            dotYear: dotYear,
-            status: status.toLowerCase()
+            isOpen: isOpen
         });
-    });
+    }
 
-    // Sort by dot date (oldest on top, newest at bottom)
-    stores.sort((a, b) => {
-        if (a.dotYear !== b.dotYear) {
-            return a.dotYear - b.dotYear;
-        }
-        // If same year, sort by name as tiebreaker
-        return a.name.localeCompare(b.name);
-    });
+    // Sort by start year
+    stores.sort((a, b) => a.startYear - b.startYear);
 
     // Create timeline
     stores.forEach(store => {
@@ -680,9 +310,9 @@ async function initTimeline() {
         const lineContainer = document.createElement('div');
         lineContainer.className = 'timeline-line-container';
 
-        // Calculate positions (2015-2024 = 9 years)
-        const startPercent = ((store.startYear - minYear) / yearRange) * 100;
-        const endPercent = ((store.endYear - minYear) / yearRange) * 100;
+        // Calculate positions (2000-2024 = 24 years)
+        const startPercent = ((store.startYear - 2000) / 24) * 100;
+        const endPercent = ((store.endYear - 2000) / 24) * 100;
         const width = endPercent - startPercent;
 
         // Line
@@ -692,30 +322,28 @@ async function initTimeline() {
         line.style.width = width + '%';
         lineContainer.appendChild(line);
 
-        // Start dot (only show if not at left edge) - for closed businesses
-        if (store.status === 'closed' && store.startYear > minYear) {
-            const startDot = document.createElement('div');
-            startDot.className = `timeline-dot start ${store.type}`;
-            startDot.style.left = startPercent + '%';
-            lineContainer.appendChild(startDot);
-        }
+        // Start dot
+        const startDot = document.createElement('div');
+        startDot.className = `timeline-dot start ${store.isOpen && store.endYear === 2024 ? 'open' : 'closed'}`;
+        startDot.style.left = startPercent + '%';
+        lineContainer.appendChild(startDot);
 
-        // End dot - for closed businesses (at verified date) or new businesses (at creation date or right edge)
-        if (store.status === 'closed' && store.endYear < maxYear) {
-            const endDot = document.createElement('div');
-            endDot.className = `timeline-dot end ${store.type}`;
-            endDot.style.left = endPercent + '%';
-            lineContainer.appendChild(endDot);
-        } else if (store.status === 'new') {
-            // For new businesses, show dot at creation date (start) or at right edge if at maxYear
-            const dotPercent = store.startYear === minYear ? endPercent : startPercent;
-            const endDot = document.createElement('div');
-            endDot.className = `timeline-dot end ${store.type}`;
-            endDot.style.left = dotPercent + '%';
-            lineContainer.appendChild(endDot);
-        }
+        // End dot
+        const endDot = document.createElement('div');
+        endDot.className = `timeline-dot end ${store.isOpen ? 'open' : 'closed'}`;
+        endDot.style.left = endPercent + '%';
+        lineContainer.appendChild(endDot);
 
         item.appendChild(lineContainer);
+
+        // Years display
+        const yearsDiv = document.createElement('div');
+        yearsDiv.className = 'timeline-years';
+        yearsDiv.innerHTML = `
+            <span>${store.startYear}</span>
+            <span>${store.endYear}</span>
+        `;
+        item.appendChild(yearsDiv);
 
         // Hover tooltip
         item.title = `${store.name}: ${store.startYear}-${store.endYear} (${store.isOpen ? 'Open' : 'Closed'})`;
@@ -723,29 +351,25 @@ async function initTimeline() {
         timelineContainer.appendChild(item);
     });
 
-    // Create fixed bottom axis with year labels
-    const axisContainer = document.createElement('div');
-    axisContainer.className = 'timeline-axis-container';
-    
-    const axis = document.createElement('div');
-    axis.className = 'timeline-axis';
-    
-    // Generate year labels (every 2 years for readability)
-    // Need to account for the same padding/margin as timeline items
-    for (let year = minYear; year <= maxYear; year += 2) {
-        const yearLabel = document.createElement('div');
-        yearLabel.className = 'timeline-axis-label';
-        yearLabel.textContent = year;
-        const percent = ((year - minYear) / yearRange) * 100;
-        yearLabel.style.left = percent + '%';
-        axis.appendChild(yearLabel);
+    // Add year labels at the top
+    const yearLabels = document.createElement('div');
+    yearLabels.style.display = 'flex';
+    yearLabels.style.justifyContent = 'space-between';
+    yearLabels.style.padding = '0 150px 0 150px';
+    yearLabels.style.marginBottom = '1rem';
+    yearLabels.style.fontSize = '0.75rem';
+    yearLabels.style.color = '#64748b';
+
+    for (let year = 2000; year <= 2024; year += 4) {
+        const label = document.createElement('span');
+        label.textContent = year;
+        yearLabels.appendChild(label);
     }
-    
-    axisContainer.appendChild(axis);
-    timelineContainer.appendChild(axisContainer);
+
+    timelineContainer.insertBefore(yearLabels, timelineContainer.firstChild);
 }
 
-// Regression Analysis
+// Regression Analysis with Multiple Visualizations
 async function initRegressionAnalysis() {
     const resultsContainer = document.getElementById('regression-results');
     if (!resultsContainer) return;
@@ -812,11 +436,13 @@ async function initRegressionAnalysis() {
         const newSchoolNewPct = totalNewSchool > 0 ? (newSchoolNew / totalNewSchool * 100).toFixed(1) : 0;
 
         // Calculate odds ratio
-        const oddsOldSchoolClosed = oldSchoolClosed / oldSchoolNew;
-        const oddsNewSchoolClosed = newSchoolClosed / newSchoolNew;
-        const oddsRatio = (oddsOldSchoolClosed / oddsNewSchoolClosed).toFixed(2);
+        const oddsOldSchoolClosed = oldSchoolNew > 0 ? oldSchoolClosed / oldSchoolNew : 0;
+        const oddsNewSchoolClosed = newSchoolNew > 0 ? newSchoolClosed / newSchoolNew : 0;
+        const oddsRatio = (oddsOldSchoolClosed > 0 && oddsNewSchoolClosed > 0) 
+            ? (oddsOldSchoolClosed / oddsNewSchoolClosed).toFixed(2) 
+            : 'N/A';
 
-        // Chi-square test (simplified calculation)
+        // Chi-square test
         const expectedOldSchoolClosed = (totalOldSchool * totalClosed) / total;
         const expectedOldSchoolNew = (totalOldSchool * totalNew) / total;
         const expectedNewSchoolClosed = (totalNewSchool * totalClosed) / total;
@@ -871,7 +497,7 @@ async function initRegressionAnalysis() {
                     <div class="stat-card">
                         <h4>Odds Ratio</h4>
                         <p class="stat-value">${oddsRatio}</p>
-                        <p class="stat-explanation">Old-school businesses are ${oddsRatio}x more likely to be closed than new-school businesses.</p>
+                        <p class="stat-explanation">Old-school businesses are ${oddsRatio !== 'N/A' ? oddsRatio + 'x' : 'significantly'} more likely to be closed than new-school businesses.</p>
                     </div>
                     <div class="stat-card">
                         <h4>Chi-Square</h4>
@@ -880,17 +506,32 @@ async function initRegressionAnalysis() {
                     </div>
                 </div>
 
-                <h3>Visualization</h3>
-                <div class="chart-container">
-                    <canvas id="regressionChart"></canvas>
+                <h3>Visualizations</h3>
+                <div class="visualization-grid">
+                    <div class="viz-container">
+                        <h4>Count Comparison</h4>
+                        <canvas id="regressionChart"></canvas>
+                    </div>
+                    <div class="viz-container">
+                        <h4>Proportional Distribution</h4>
+                        <canvas id="stackedChart"></canvas>
+                    </div>
+                    <div class="viz-container">
+                        <h4>Heatmap</h4>
+                        <canvas id="heatmapChart"></canvas>
+                    </div>
+                    <div class="viz-container">
+                        <h4>Flow Diagram</h4>
+                        <div id="flowDiagram"></div>
+                    </div>
                 </div>
             </div>
         `;
 
-        // Create chart
-        const ctx = document.getElementById('regressionChart');
-        if (ctx && typeof Chart !== 'undefined') {
-            new Chart(ctx, {
+        // Create count comparison chart (bar chart)
+        const ctx1 = document.getElementById('regressionChart');
+        if (ctx1 && typeof Chart !== 'undefined') {
+            new Chart(ctx1, {
                 type: 'bar',
                 data: {
                     labels: ['Old-school', 'New-school'],
@@ -918,7 +559,59 @@ async function initRegressionAnalysis() {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                stepSize: 50
+                                stepSize: Math.ceil(Math.max(totalOldSchool, totalNewSchool) / 10)
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create proportional stacked bar chart
+        const ctx2 = document.getElementById('stackedChart');
+        if (ctx2 && typeof Chart !== 'undefined') {
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Old-school', 'New-school'],
+                    datasets: [
+                        {
+                            label: 'Closed',
+                            data: [parseFloat(oldSchoolClosedPct), parseFloat(newSchoolClosedPct)],
+                            backgroundColor: '#ef4444',
+                            borderColor: '#dc2626',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'New',
+                            data: [parseFloat(oldSchoolNewPct), parseFloat(newSchoolNewPct)],
+                            backgroundColor: '#10b981',
+                            borderColor: '#059669',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
                             }
                         }
                     },
@@ -927,13 +620,234 @@ async function initRegressionAnalysis() {
                             display: true,
                             position: 'top'
                         },
-                        title: {
-                            display: true,
-                            text: 'Business Status by Typography Class'
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                }
+                            }
                         }
                     }
                 }
             });
+        }
+
+        // Create heatmap using Chart.js
+        const ctx3 = document.getElementById('heatmapChart');
+        if (ctx3 && typeof Chart !== 'undefined') {
+            // Calculate normalized values for heatmap intensity
+            const maxValue = Math.max(oldSchoolClosed, oldSchoolNew, newSchoolClosed, newSchoolNew);
+            const normalize = (val) => (val / maxValue) * 100;
+
+            new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: ['Old-school', 'New-school'],
+                    datasets: [
+                        {
+                            label: 'Closed',
+                            data: [normalize(oldSchoolClosed), normalize(newSchoolClosed)],
+                            backgroundColor: function(context) {
+                                const value = context.parsed.y;
+                                const intensity = Math.min(value / 100, 1);
+                                return `rgba(239, 68, 68, ${0.3 + intensity * 0.7})`;
+                            },
+                            borderColor: '#dc2626',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'New',
+                            data: [normalize(oldSchoolNew), normalize(newSchoolNew)],
+                            backgroundColor: function(context) {
+                                const value = context.parsed.y;
+                                const intensity = Math.min(value / 100, 1);
+                                return `rgba(16, 185, 129, ${0.3 + intensity * 0.7})`;
+                            },
+                            borderColor: '#059669',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return Math.round((value / 100) * maxValue);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const normalized = context.parsed.y;
+                                    const actual = Math.round((normalized / 100) * maxValue);
+                                    return context.dataset.label + ': ' + actual + ' businesses';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create flow diagram (Sankey-like visualization)
+        const flowContainer = document.getElementById('flowDiagram');
+        if (flowContainer) {
+            const totalWidth = 400;
+            const totalHeight = 200;
+            const nodeWidth = 80;
+            const gap = 40;
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '200');
+            svg.setAttribute('viewBox', '0 0 500 200');
+            svg.style.maxWidth = '100%';
+
+            // Calculate proportions for flow widths
+            const oldSchoolClosedFlow = (oldSchoolClosed / total) * 100;
+            const oldSchoolNewFlow = (oldSchoolNew / total) * 100;
+            const newSchoolClosedFlow = (newSchoolClosed / total) * 100;
+            const newSchoolNewFlow = (newSchoolNew / total) * 100;
+
+            // Left nodes (Typography)
+            const leftY1 = 50;
+            const leftY2 = 150;
+            const leftX = 10;
+
+            // Right nodes (Status)
+            const rightY1 = 50;
+            const rightY2 = 150;
+            const rightX = 410;
+
+            // Draw flows
+            // Old-school to Closed
+            const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path1.setAttribute('d', `M ${leftX + nodeWidth} ${leftY1} C ${leftX + nodeWidth + gap} ${leftY1}, ${rightX - gap} ${rightY1}, ${rightX} ${rightY1}`);
+            path1.setAttribute('stroke', '#8B6F47');
+            path1.setAttribute('stroke-width', Math.max(2, oldSchoolClosedFlow * 2));
+            path1.setAttribute('fill', 'none');
+            path1.setAttribute('opacity', '0.6');
+            svg.appendChild(path1);
+
+            // Old-school to New
+            const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path2.setAttribute('d', `M ${leftX + nodeWidth} ${leftY1} C ${leftX + nodeWidth + gap} ${leftY1 + 20}, ${rightX - gap} ${rightY2 - 20}, ${rightX} ${rightY2}`);
+            path2.setAttribute('stroke', '#8B6F47');
+            path2.setAttribute('stroke-width', Math.max(2, oldSchoolNewFlow * 2));
+            path2.setAttribute('fill', 'none');
+            path2.setAttribute('opacity', '0.6');
+            svg.appendChild(path2);
+
+            // New-school to Closed
+            const path3 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path3.setAttribute('d', `M ${leftX + nodeWidth} ${leftY2} C ${leftX + nodeWidth + gap} ${leftY2 - 20}, ${rightX - gap} ${rightY1 + 20}, ${rightX} ${rightY1}`);
+            path3.setAttribute('stroke', '#E91E63');
+            path3.setAttribute('stroke-width', Math.max(2, newSchoolClosedFlow * 2));
+            path3.setAttribute('fill', 'none');
+            path3.setAttribute('opacity', '0.6');
+            svg.appendChild(path3);
+
+            // New-school to New
+            const path4 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path4.setAttribute('d', `M ${leftX + nodeWidth} ${leftY2} C ${leftX + nodeWidth + gap} ${leftY2}, ${rightX - gap} ${rightY2}, ${rightX} ${rightY2}`);
+            path4.setAttribute('stroke', '#E91E63');
+            path4.setAttribute('stroke-width', Math.max(2, newSchoolNewFlow * 2));
+            path4.setAttribute('fill', 'none');
+            path4.setAttribute('opacity', '0.6');
+            svg.appendChild(path4);
+
+            // Left nodes
+            const leftNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            leftNode1.setAttribute('x', leftX);
+            leftNode1.setAttribute('y', leftY1 - 15);
+            leftNode1.setAttribute('width', nodeWidth);
+            leftNode1.setAttribute('height', 30);
+            leftNode1.setAttribute('fill', '#8B6F47');
+            leftNode1.setAttribute('rx', '4');
+            svg.appendChild(leftNode1);
+
+            const leftNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            leftNode2.setAttribute('x', leftX);
+            leftNode2.setAttribute('y', leftY2 - 15);
+            leftNode2.setAttribute('width', nodeWidth);
+            leftNode2.setAttribute('height', 30);
+            leftNode2.setAttribute('fill', '#E91E63');
+            leftNode2.setAttribute('rx', '4');
+            svg.appendChild(leftNode2);
+
+            // Right nodes
+            const rightNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rightNode1.setAttribute('x', rightX);
+            rightNode1.setAttribute('y', rightY1 - 15);
+            rightNode1.setAttribute('width', nodeWidth);
+            rightNode1.setAttribute('height', 30);
+            rightNode1.setAttribute('fill', '#ef4444');
+            rightNode1.setAttribute('rx', '4');
+            svg.appendChild(rightNode1);
+
+            const rightNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rightNode2.setAttribute('x', rightX);
+            rightNode2.setAttribute('y', rightY2 - 15);
+            rightNode2.setAttribute('width', nodeWidth);
+            rightNode2.setAttribute('height', 30);
+            rightNode2.setAttribute('fill', '#10b981');
+            rightNode2.setAttribute('rx', '4');
+            svg.appendChild(rightNode2);
+
+            // Labels
+            const leftLabel1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            leftLabel1.setAttribute('x', leftX + nodeWidth / 2);
+            leftLabel1.setAttribute('y', leftY1);
+            leftLabel1.setAttribute('text-anchor', 'middle');
+            leftLabel1.setAttribute('fill', 'white');
+            leftLabel1.setAttribute('font-size', '12');
+            leftLabel1.setAttribute('font-weight', 'bold');
+            leftLabel1.textContent = 'Old-school';
+            svg.appendChild(leftLabel1);
+
+            const leftLabel2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            leftLabel2.setAttribute('x', leftX + nodeWidth / 2);
+            leftLabel2.setAttribute('y', leftY2);
+            leftLabel2.setAttribute('text-anchor', 'middle');
+            leftLabel2.setAttribute('fill', 'white');
+            leftLabel2.setAttribute('font-size', '12');
+            leftLabel2.setAttribute('font-weight', 'bold');
+            leftLabel2.textContent = 'New-school';
+            svg.appendChild(leftLabel2);
+
+            const rightLabel1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            rightLabel1.setAttribute('x', rightX + nodeWidth / 2);
+            rightLabel1.setAttribute('y', rightY1);
+            rightLabel1.setAttribute('text-anchor', 'middle');
+            rightLabel1.setAttribute('fill', 'white');
+            rightLabel1.setAttribute('font-size', '12');
+            rightLabel1.setAttribute('font-weight', 'bold');
+            rightLabel1.textContent = 'Closed';
+            svg.appendChild(rightLabel1);
+
+            const rightLabel2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            rightLabel2.setAttribute('x', rightX + nodeWidth / 2);
+            rightLabel2.setAttribute('y', rightY2);
+            rightLabel2.setAttribute('text-anchor', 'middle');
+            rightLabel2.setAttribute('fill', 'white');
+            rightLabel2.setAttribute('font-size', '12');
+            rightLabel2.setAttribute('font-weight', 'bold');
+            rightLabel2.textContent = 'New';
+            svg.appendChild(rightLabel2);
+
+            flowContainer.appendChild(svg);
         }
     } catch (error) {
         console.error('Error performing regression analysis:', error);
