@@ -23,7 +23,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Initialize visualizations when tab becomes active
             if (targetTab === 'map') {
-                initMap();
+                // Small delay to ensure tab panel is visible before initializing map
+                setTimeout(() => {
+                    initMap();
+                }, 100);
             } else if (targetTab === 'timeline') {
                 initTimeline();
             } else if (targetTab === 'background') {
@@ -35,6 +38,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize charts
     initRevenueChart();
     initWeeklyChart();
+    
+    // Initialize map if map tab is active by default
+    const activeTab = document.querySelector('.tab-button.active');
+    if (activeTab && activeTab.getAttribute('data-tab') === 'map') {
+        setTimeout(() => {
+            initMap();
+        }, 300);
+    }
 });
 
 // Revenue Chart
@@ -178,81 +189,328 @@ function initWeeklyChart() {
     });
 }
 
-// Map Visualization
+// Map Visualization with Leaflet
+let map = null;
+let markers = null;
+
 function initMap() {
     const mapContainer = document.getElementById('map-visualization');
-    if (!mapContainer || mapContainer.dataset.initialized === 'true') return;
-
-    // Clear any existing content
-    mapContainer.innerHTML = '';
-    mapContainer.dataset.initialized = 'true';
-
-    // Create SVG for Brooklyn outline (simplified)
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-    svg.setAttribute('viewBox', '0 0 800 600');
-    svg.style.position = 'absolute';
-    svg.style.top = '0';
-    svg.style.left = '0';
-
-    // Simplified Brooklyn outline (polygon approximation)
-    const brooklynPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    brooklynPath.setAttribute('d', 'M 100 100 L 700 80 L 750 200 L 720 400 L 600 550 L 200 520 L 80 350 Z');
-    brooklynPath.setAttribute('fill', '#ffffff');
-    brooklynPath.setAttribute('stroke', '#cbd5e1');
-    brooklynPath.setAttribute('stroke-width', '2');
-    svg.appendChild(brooklynPath);
-
-    mapContainer.appendChild(svg);
-
-    // Generate 300 random pinpoints
-    const traditionalCount = 150;
-    const modernCount = 150;
-    let traditionalPlaced = 0;
-    let modernPlaced = 0;
-
-    // Function to check if point is within Brooklyn bounds (simplified)
-    function isInBrooklyn(x, y) {
-        // Simple bounding box check
-        return x > 100 && x < 700 && y > 80 && y < 520;
+    if (!mapContainer) {
+        console.error('Map container not found');
+        return;
     }
 
-    // Generate traditional pins
-    while (traditionalPlaced < traditionalCount) {
-        const x = Math.random() * 600 + 100;
-        const y = Math.random() * 440 + 80;
+    // Check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+        console.error('Leaflet library not loaded');
+        mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error: Leaflet map library failed to load. Please refresh the page.</p>';
+        return;
+    }
+
+    // Initialize map if not already done
+    if (!map) {
+        // Clear any existing content (remove dummy SVG if present)
+        mapContainer.innerHTML = '';
         
-        if (isInBrooklyn(x, y)) {
-            const pin = document.createElement('div');
-            pin.className = 'map-pin traditional';
-            pin.style.left = (x / 800 * 100) + '%';
-            pin.style.top = (y / 600 * 100) + '%';
-            pin.title = 'Traditional Typography Storefront';
-            mapContainer.appendChild(pin);
-            traditionalPlaced++;
+        try {
+            // Center on Bedford-Stuyvesant, Brooklyn
+            map = L.map('map-visualization').setView([40.686, -73.944], 13);
+        } catch (error) {
+            console.error('Error creating map:', error);
+            return;
         }
     }
 
-    // Generate modern pins
-    while (modernPlaced < modernCount) {
-        const x = Math.random() * 600 + 100;
-        const y = Math.random() * 440 + 80;
-        
-        if (isInBrooklyn(x, y)) {
-            const pin = document.createElement('div');
-            pin.className = 'map-pin modern';
-            pin.style.left = (x / 800 * 100) + '%';
-            pin.style.top = (y / 600 * 100) + '%';
-            pin.title = 'Modern Typography Storefront';
-            mapContainer.appendChild(pin);
-            modernPlaced++;
+    // Always ensure CartoDB tiles are used (remove old tiles if present)
+    try {
+        // Remove any existing tile layers
+        map.eachLayer(function(layer) {
+            if (layer instanceof L.TileLayer) {
+                map.removeLayer(layer);
+            }
+        });
+
+        // Add CartoDB Positron tiles (light grey, matches signmap style)
+        const cartoTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> contributors',
+            maxZoom: 19,
+            subdomains: 'abcd'
+        });
+        cartoTiles.addTo(map);
+        console.log('CartoDB Positron tiles added to map');
+
+        // Create marker layer group if it doesn't exist
+        if (!markers) {
+            markers = L.layerGroup().addTo(map);
         }
+        
+        console.log('Leaflet map initialized successfully');
+        
+        // Invalidate size to ensure proper rendering
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+            }
+        }, 200);
+    } catch (error) {
+        console.error('Error setting up map tiles:', error);
+        if (mapContainer) {
+            mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error loading map tiles. Please check the console for details.</p>';
+        }
+        return;
     }
 
-    // Update legend counts
-    document.getElementById('traditional-count').textContent = traditionalCount;
-    document.getElementById('modern-count').textContent = modernCount;
+    if (map) {
+        // If map already exists, just invalidate size and reload data
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+            }
+        }, 100);
+    }
+
+    // Load CSV data
+    loadCSVData();
+}
+
+async function loadCSVData() {
+    try {
+        const response = await fetch('data.csv');
+        if (!response.ok) {
+            throw new Error('Failed to load CSV data');
+        }
+
+        const csvText = await response.text();
+        const parsed = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: false  // Keep as strings to preserve values
+        });
+
+        if (parsed.errors.length > 0) {
+            console.warn('CSV parsing errors:', parsed.errors);
+        }
+
+        // Debug: Check first few rows with photos
+        console.log('CSV parsed. Total rows:', parsed.data.length);
+        if (parsed.data.length > 0) {
+            const sampleRow = parsed.data.find(r => r['Photo_URL'] && r['Photo_URL'].trim());
+            if (sampleRow) {
+                console.log('Sample row keys with "Predicted":', Object.keys(sampleRow).filter(k => k.includes('Predicted')));
+                console.log('Sample row Predicted Class value:', sampleRow['Predicted Class']);
+            }
+        }
+
+        createMarkers(parsed.data);
+    } catch (error) {
+        console.error('Error loading CSV:', error);
+        const mapContainer = document.getElementById('map-visualization');
+        if (mapContainer) {
+            mapContainer.innerHTML = '<p style="padding: 2rem; text-align: center; color: #64748b;">Error loading map data. Please ensure data.csv is available.</p>';
+        }
+    }
+}
+
+function createMarkers(rows) {
+    if (!markers) return;
+
+    // Clear existing markers
+    markers.clearLayers();
+
+    let oldSchoolCount = 0;
+    let newSchoolCount = 0;
+    let totalCount = 0;
+
+    rows.forEach(row => {
+        try {
+            // Get coordinates
+            const lat = parseFloat(row['LiveXYZSeptember132025_XYTableToPoint_entrances_main_lat']);
+            const lng = parseFloat(row['LiveXYZSeptember132025_XYTableToPoint_entrances_main_lon']);
+
+            // Skip if coordinates are invalid
+            if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+                return;
+            }
+
+            // Get photo URL and skip if no image
+            const photoUrl = row['Photo_URL'] || '';
+            if (!photoUrl || photoUrl.trim() === '') {
+                return; // Skip markers without images
+            }
+
+            // Get prediction data
+            let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
+            
+            // Convert to string and trim
+            predictedClass = String(predictedClass || '').trim();
+            
+            // Remove leading numeral (0 or 1) and space from Predicted Class
+            if (predictedClass) {
+                predictedClass = predictedClass.replace(/^[01]\s+/, '');  // Match one or more spaces after 0/1
+            }
+            
+            const status = row['Status_simplified'] || '';
+            const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 'Unknown';
+            const address = row['LiveXYZSeptember132025_XYTableToPoint_address'] || '';
+            const postcode = row['LiveXYZSeptember132025_XYTableToPoint_postcode'] || '';
+            const category = row['LiveXYZSeptember132025_XYTableToPoint_subcategoriesPrimary_name'] || 
+                            row['LiveXYZSeptember132025_XYTableToPoint_categoriesPrimary_name'] || '';
+
+            // Determine if Old-school or New-school
+            const isOldSchool = predictedClass.includes('Old-school');
+
+            // Create custom icon based on typography class
+            const iconColor = isOldSchool ? '#8B6F47' : '#E91E63'; // Brown for old-school, pink for new-school
+            
+            // Determine border color based on status
+            let borderColor = 'white'; // Default
+            if (status && status.toLowerCase() === 'closed') {
+                // Remove white border for closed (use same color as background)
+                borderColor = iconColor;
+            } else if (status && status.toLowerCase() === 'new') {
+                // Use darker version of pin color for new status
+                borderColor = isOldSchool ? '#5A4A2F' : '#B71C1C'; // Darker brown or darker pink
+            }
+            
+            const icon = L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background-color: ${iconColor}; width: 10px; height: 10px; border-radius: 50%; border: 2px solid ${borderColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                iconSize: [10, 10],
+                iconAnchor: [5, 5]
+            });
+
+            // Create marker
+            const marker = L.marker([lat, lng], { icon: icon });
+
+            // Create popup content
+            let popupContent = '<div class="popup-content">';
+            popupContent += `<h3>${name}</h3>`;
+            
+            // Add storefront image thumbnail
+            if (photoUrl) {
+                popupContent += `<div class="popup-image-container"><img src="${photoUrl}" alt="${name}" class="popup-thumbnail" onerror="this.style.display='none'"></div>`;
+            }
+            
+            if (address) {
+                popupContent += `<p class="address"><strong>Address:</strong> ${address}`;
+                if (postcode) {
+                    popupContent += `, ${postcode}`;
+                }
+                popupContent += '</p>';
+            }
+
+            if (category) {
+                popupContent += `<p><strong>Category:</strong> ${category}</p>`;
+            }
+
+            if (status) {
+                popupContent += `<p><strong>Status:</strong> ${status}</p>`;
+            }
+
+            popupContent += `<p><strong>Predicted Class:</strong> ${predictedClass || 'N/A'}</p>`;
+
+            popupContent += '</div>';
+
+            // Bind popup with auto-positioning options
+            const popup = L.popup({
+                autoPan: true,
+                autoPanPadding: [50, 50],
+                autoPanPaddingTopLeft: [50, 50],
+                autoPanPaddingBottomRight: [50, 50],
+                closeOnClick: false,
+                autoClose: true,  // Only allow one popup at a time
+                maxWidth: 300
+            }).setContent(popupContent);
+
+            marker.bindPopup(popup);
+
+            // Add event listener to adjust popup position based on viewport
+            marker.on('popupopen', function() {
+                setTimeout(() => {
+                    const openPopup = marker.getPopup();
+                    if (openPopup && openPopup.isOpen()) {
+                        const popupElement = openPopup.getElement();
+                        if (!popupElement) return;
+                        
+                        const markerLatLng = marker.getLatLng();
+                        const mapPixelPoint = map.latLngToContainerPoint(markerLatLng);
+                        const mapSize = map.getSize();
+                        
+                        // Get actual popup dimensions
+                        const popupRect = popupElement.getBoundingClientRect();
+                        const mapRect = map.getContainer().getBoundingClientRect();
+                        const popupWidth = popupRect.width;
+                        const popupHeight = popupRect.height;
+                        
+                        // Calculate available space in each direction
+                        const spaceAbove = mapPixelPoint.y;
+                        const spaceBelow = mapSize.y - mapPixelPoint.y;
+                        const spaceLeft = mapPixelPoint.x;
+                        const spaceRight = mapSize.x - mapPixelPoint.x;
+                        
+                        // Determine best popup direction
+                        let direction = 'top'; // Default
+                        if (spaceAbove < popupHeight + 20 && spaceBelow > popupHeight + 20) {
+                            direction = 'bottom';
+                        } else if (spaceAbove < popupHeight + 20 && spaceBelow < popupHeight + 20) {
+                            // Not enough space above or below, try sides
+                            if (spaceRight > popupWidth + 20) {
+                                direction = 'right';
+                            } else if (spaceLeft > popupWidth + 20) {
+                                direction = 'left';
+                            } else if (spaceBelow > spaceAbove) {
+                                direction = 'bottom';
+                            }
+                        }
+                        
+                        // Update popup direction by manipulating classes
+                        const wrapper = popupElement.querySelector('.leaflet-popup-content-wrapper');
+                        const tip = popupElement.querySelector('.leaflet-popup-tip');
+                        
+                        if (wrapper && tip) {
+                            // Remove all direction classes
+                            ['top', 'bottom', 'left', 'right'].forEach(dir => {
+                                wrapper.classList.remove(`leaflet-popup-${dir}`);
+                                tip.classList.remove(`leaflet-popup-tip-${dir}`);
+                            });
+                            
+                            // Add new direction classes
+                            wrapper.classList.add(`leaflet-popup-${direction}`);
+                            tip.classList.add(`leaflet-popup-tip-${direction}`);
+                            
+                            // Force update popup position
+                            openPopup.update();
+                        }
+                    }
+                }, 50);
+            });
+
+            markers.addLayer(marker);
+
+            // Update counts
+            totalCount++;
+            if (isOldSchool) {
+                oldSchoolCount++;
+            } else {
+                newSchoolCount++;
+            }
+        } catch (error) {
+            console.error('Error creating marker for row:', row, error);
+        }
+    });
+
+    // Update stats
+    document.getElementById('total-markers').textContent = totalCount;
+    document.getElementById('old-school-count').textContent = oldSchoolCount;
+    document.getElementById('new-school-count').textContent = newSchoolCount;
+    document.getElementById('traditional-count').textContent = oldSchoolCount;
+    document.getElementById('modern-count').textContent = newSchoolCount;
+
+    // Fit map to markers if we have any
+    if (totalCount > 0 && markers.getLayers().length > 0) {
+        const group = new L.featureGroup(markers.getLayers());
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
 }
 
 // Timeline Visualization

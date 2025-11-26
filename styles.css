@@ -233,6 +233,20 @@ body {
     margin: 2rem 0;
 }
 
+.map-stats {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.map-stats p {
+    margin-bottom: 0.25rem;
+}
+
 .map-visualization {
     width: 100%;
     height: 600px;
@@ -243,6 +257,12 @@ body {
     overflow: hidden;
 }
 
+/* Leaflet map container */
+#map-visualization.leaflet-container {
+    border-radius: 8px;
+    z-index: 1;
+}
+
 .map-legend {
     display: flex;
     gap: 2rem;
@@ -251,6 +271,20 @@ body {
     background-color: #f8fafc;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+
+.legend-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.legend-section-title {
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
 }
 
 .legend-item {
@@ -266,6 +300,93 @@ body {
     height: 20px;
     border-radius: 50%;
     display: inline-block;
+}
+
+.legend-color.old-school {
+    background-color: #8B6F47;
+}
+
+.legend-color.new-school {
+    background-color: #E91E63;
+}
+
+.legend-marker {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.legend-marker.old-school {
+    background-color: #8B6F47;
+}
+
+.legend-marker.new-school {
+    background-color: #E91E63;
+}
+
+.legend-marker.closed.old-school {
+    border: 2px solid #8B6F47; /* Same as background (no visible border) */
+}
+
+.legend-marker.closed.new-school {
+    border: 2px solid #E91E63; /* Same as background (no visible border) */
+}
+
+.legend-marker.new.old-school {
+    border: 2px solid #5A4A2F; /* Darker brown border */
+}
+
+.legend-marker.new.new-school {
+    border: 2px solid #B71C1C; /* Darker pink border */
+}
+
+/* Leaflet popup styles */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    font-family: inherit;
+}
+
+.leaflet-popup-content {
+    margin: 1rem;
+    min-width: 200px;
+}
+
+.popup-content h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.125rem;
+    line-height: 1.0;
+}
+
+.popup-content p {
+    margin-bottom: 0.125rem;
+    font-size: 0.875rem;
+    color: #475569;
+    line-height: 1.0;
+}
+
+.popup-content .address {
+    font-weight: 500;
+    color: #334155;
+}
+
+.popup-image-container {
+    margin: 0.5rem 0;
+    text-align: center;
+}
+
+.popup-thumbnail {
+    max-width: 200px;
+    max-height: 150px;
+    width: auto;
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    object-fit: cover;
 }
 
 .legend-color.dark-slate {
