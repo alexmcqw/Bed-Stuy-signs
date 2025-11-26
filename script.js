@@ -534,20 +534,20 @@ async function initRegressionAnalysis() {
             new Chart(ctx1, {
                 type: 'bar',
                 data: {
-                    labels: ['Old-school', 'New-school'],
+                    labels: ['Closed', 'New'],
                     datasets: [
                         {
-                            label: 'Closed',
-                            data: [oldSchoolClosed, newSchoolClosed],
-                            backgroundColor: '#ef4444',
-                            borderColor: '#dc2626',
+                            label: 'Old-school',
+                            data: [oldSchoolClosed, oldSchoolNew],
+                            backgroundColor: '#8B6F47',
+                            borderColor: '#5A4A2F',
                             borderWidth: 1
                         },
                         {
-                            label: 'New',
-                            data: [oldSchoolNew, newSchoolNew],
-                            backgroundColor: '#10b981',
-                            borderColor: '#059669',
+                            label: 'New-school',
+                            data: [newSchoolClosed, newSchoolNew],
+                            backgroundColor: '#E91E63',
+                            borderColor: '#B71C1C',
                             borderWidth: 1
                         }
                     ]
@@ -559,7 +559,7 @@ async function initRegressionAnalysis() {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                stepSize: Math.ceil(Math.max(totalOldSchool, totalNewSchool) / 10)
+                                stepSize: Math.ceil(Math.max(totalClosed, totalNew) / 10)
                             }
                         }
                     },
@@ -576,23 +576,29 @@ async function initRegressionAnalysis() {
         // Create proportional stacked bar chart
         const ctx2 = document.getElementById('stackedChart');
         if (ctx2 && typeof Chart !== 'undefined') {
+            // Calculate percentages within each status category
+            const closedOldSchoolPct = totalClosed > 0 ? (oldSchoolClosed / totalClosed * 100).toFixed(1) : 0;
+            const closedNewSchoolPct = totalClosed > 0 ? (newSchoolClosed / totalClosed * 100).toFixed(1) : 0;
+            const newOldSchoolPct = totalNew > 0 ? (oldSchoolNew / totalNew * 100).toFixed(1) : 0;
+            const newNewSchoolPct = totalNew > 0 ? (newSchoolNew / totalNew * 100).toFixed(1) : 0;
+
             new Chart(ctx2, {
                 type: 'bar',
                 data: {
-                    labels: ['Old-school', 'New-school'],
+                    labels: ['Closed', 'New'],
                     datasets: [
                         {
-                            label: 'Closed',
-                            data: [parseFloat(oldSchoolClosedPct), parseFloat(newSchoolClosedPct)],
-                            backgroundColor: '#ef4444',
-                            borderColor: '#dc2626',
+                            label: 'Old-school',
+                            data: [parseFloat(closedOldSchoolPct), parseFloat(newOldSchoolPct)],
+                            backgroundColor: '#8B6F47',
+                            borderColor: '#5A4A2F',
                             borderWidth: 1
                         },
                         {
-                            label: 'New',
-                            data: [parseFloat(oldSchoolNewPct), parseFloat(newSchoolNewPct)],
-                            backgroundColor: '#10b981',
-                            borderColor: '#059669',
+                            label: 'New-school',
+                            data: [parseFloat(closedNewSchoolPct), parseFloat(newNewSchoolPct)],
+                            backgroundColor: '#E91E63',
+                            borderColor: '#B71C1C',
                             borderWidth: 1
                         }
                     ]
@@ -642,28 +648,28 @@ async function initRegressionAnalysis() {
             new Chart(ctx3, {
                 type: 'bar',
                 data: {
-                    labels: ['Old-school', 'New-school'],
+                    labels: ['Closed', 'New'],
                     datasets: [
                         {
-                            label: 'Closed',
-                            data: [normalize(oldSchoolClosed), normalize(newSchoolClosed)],
+                            label: 'Old-school',
+                            data: [normalize(oldSchoolClosed), normalize(oldSchoolNew)],
                             backgroundColor: function(context) {
                                 const value = context.parsed.y;
                                 const intensity = Math.min(value / 100, 1);
-                                return `rgba(239, 68, 68, ${0.3 + intensity * 0.7})`;
+                                return `rgba(139, 111, 71, ${0.3 + intensity * 0.7})`;
                             },
-                            borderColor: '#dc2626',
+                            borderColor: '#5A4A2F',
                             borderWidth: 2
                         },
                         {
-                            label: 'New',
-                            data: [normalize(oldSchoolNew), normalize(newSchoolNew)],
+                            label: 'New-school',
+                            data: [normalize(newSchoolClosed), normalize(newSchoolNew)],
                             backgroundColor: function(context) {
                                 const value = context.parsed.y;
                                 const intensity = Math.min(value / 100, 1);
-                                return `rgba(16, 185, 129, ${0.3 + intensity * 0.7})`;
+                                return `rgba(233, 30, 99, ${0.3 + intensity * 0.7})`;
                             },
-                            borderColor: '#059669',
+                            borderColor: '#B71C1C',
                             borderWidth: 2
                         }
                     ]
@@ -721,18 +727,18 @@ async function initRegressionAnalysis() {
             const newSchoolClosedFlow = (newSchoolClosed / total) * 100;
             const newSchoolNewFlow = (newSchoolNew / total) * 100;
 
-            // Left nodes (Typography)
+            // Left nodes (Status)
             const leftY1 = 50;
             const leftY2 = 150;
             const leftX = 10;
 
-            // Right nodes (Status)
+            // Right nodes (Typography)
             const rightY1 = 50;
             const rightY2 = 150;
             const rightX = 410;
 
             // Draw flows
-            // Old-school to Closed
+            // Closed to Old-school
             const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path1.setAttribute('d', `M ${leftX + nodeWidth} ${leftY1} C ${leftX + nodeWidth + gap} ${leftY1}, ${rightX - gap} ${rightY1}, ${rightX} ${rightY1}`);
             path1.setAttribute('stroke', '#8B6F47');
@@ -741,25 +747,25 @@ async function initRegressionAnalysis() {
             path1.setAttribute('opacity', '0.6');
             svg.appendChild(path1);
 
-            // Old-school to New
+            // Closed to New-school
             const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path2.setAttribute('d', `M ${leftX + nodeWidth} ${leftY1} C ${leftX + nodeWidth + gap} ${leftY1 + 20}, ${rightX - gap} ${rightY2 - 20}, ${rightX} ${rightY2}`);
-            path2.setAttribute('stroke', '#8B6F47');
-            path2.setAttribute('stroke-width', Math.max(2, oldSchoolNewFlow * 2));
+            path2.setAttribute('stroke', '#E91E63');
+            path2.setAttribute('stroke-width', Math.max(2, newSchoolClosedFlow * 2));
             path2.setAttribute('fill', 'none');
             path2.setAttribute('opacity', '0.6');
             svg.appendChild(path2);
 
-            // New-school to Closed
+            // New to Old-school
             const path3 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path3.setAttribute('d', `M ${leftX + nodeWidth} ${leftY2} C ${leftX + nodeWidth + gap} ${leftY2 - 20}, ${rightX - gap} ${rightY1 + 20}, ${rightX} ${rightY1}`);
-            path3.setAttribute('stroke', '#E91E63');
-            path3.setAttribute('stroke-width', Math.max(2, newSchoolClosedFlow * 2));
+            path3.setAttribute('stroke', '#8B6F47');
+            path3.setAttribute('stroke-width', Math.max(2, oldSchoolNewFlow * 2));
             path3.setAttribute('fill', 'none');
             path3.setAttribute('opacity', '0.6');
             svg.appendChild(path3);
 
-            // New-school to New
+            // New to New-school
             const path4 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path4.setAttribute('d', `M ${leftX + nodeWidth} ${leftY2} C ${leftX + nodeWidth + gap} ${leftY2}, ${rightX - gap} ${rightY2}, ${rightX} ${rightY2}`);
             path4.setAttribute('stroke', '#E91E63');
@@ -768,13 +774,13 @@ async function initRegressionAnalysis() {
             path4.setAttribute('opacity', '0.6');
             svg.appendChild(path4);
 
-            // Left nodes
+            // Left nodes (Status)
             const leftNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             leftNode1.setAttribute('x', leftX);
             leftNode1.setAttribute('y', leftY1 - 15);
             leftNode1.setAttribute('width', nodeWidth);
             leftNode1.setAttribute('height', 30);
-            leftNode1.setAttribute('fill', '#8B6F47');
+            leftNode1.setAttribute('fill', '#ef4444');
             leftNode1.setAttribute('rx', '4');
             svg.appendChild(leftNode1);
 
@@ -783,17 +789,17 @@ async function initRegressionAnalysis() {
             leftNode2.setAttribute('y', leftY2 - 15);
             leftNode2.setAttribute('width', nodeWidth);
             leftNode2.setAttribute('height', 30);
-            leftNode2.setAttribute('fill', '#E91E63');
+            leftNode2.setAttribute('fill', '#10b981');
             leftNode2.setAttribute('rx', '4');
             svg.appendChild(leftNode2);
 
-            // Right nodes
+            // Right nodes (Typography)
             const rightNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             rightNode1.setAttribute('x', rightX);
             rightNode1.setAttribute('y', rightY1 - 15);
             rightNode1.setAttribute('width', nodeWidth);
             rightNode1.setAttribute('height', 30);
-            rightNode1.setAttribute('fill', '#ef4444');
+            rightNode1.setAttribute('fill', '#8B6F47');
             rightNode1.setAttribute('rx', '4');
             svg.appendChild(rightNode1);
 
@@ -802,7 +808,7 @@ async function initRegressionAnalysis() {
             rightNode2.setAttribute('y', rightY2 - 15);
             rightNode2.setAttribute('width', nodeWidth);
             rightNode2.setAttribute('height', 30);
-            rightNode2.setAttribute('fill', '#10b981');
+            rightNode2.setAttribute('fill', '#E91E63');
             rightNode2.setAttribute('rx', '4');
             svg.appendChild(rightNode2);
 
@@ -814,7 +820,7 @@ async function initRegressionAnalysis() {
             leftLabel1.setAttribute('fill', 'white');
             leftLabel1.setAttribute('font-size', '12');
             leftLabel1.setAttribute('font-weight', 'bold');
-            leftLabel1.textContent = 'Old-school';
+            leftLabel1.textContent = 'Closed';
             svg.appendChild(leftLabel1);
 
             const leftLabel2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -824,7 +830,7 @@ async function initRegressionAnalysis() {
             leftLabel2.setAttribute('fill', 'white');
             leftLabel2.setAttribute('font-size', '12');
             leftLabel2.setAttribute('font-weight', 'bold');
-            leftLabel2.textContent = 'New-school';
+            leftLabel2.textContent = 'New';
             svg.appendChild(leftLabel2);
 
             const rightLabel1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -834,7 +840,7 @@ async function initRegressionAnalysis() {
             rightLabel1.setAttribute('fill', 'white');
             rightLabel1.setAttribute('font-size', '12');
             rightLabel1.setAttribute('font-weight', 'bold');
-            rightLabel1.textContent = 'Closed';
+            rightLabel1.textContent = 'Old-school';
             svg.appendChild(rightLabel1);
 
             const rightLabel2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -844,7 +850,7 @@ async function initRegressionAnalysis() {
             rightLabel2.setAttribute('fill', 'white');
             rightLabel2.setAttribute('font-size', '12');
             rightLabel2.setAttribute('font-weight', 'bold');
-            rightLabel2.textContent = 'New';
+            rightLabel2.textContent = 'New-school';
             svg.appendChild(rightLabel2);
 
             flowContainer.appendChild(svg);
