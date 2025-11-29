@@ -156,6 +156,29 @@ body {
     line-height: 1.8;
 }
 
+.storefront-comparison {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 0;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.storefront-image {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.storefront-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
 .objectives-list {
     list-style: none;
     margin-left: 0;
