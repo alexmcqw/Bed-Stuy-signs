@@ -409,12 +409,24 @@ body {
 
 .timeline-visualization {
     width: 100%;
-    min-height: 800px;
+    max-height: 800px;
     background-color: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 2rem;
     overflow-x: auto;
+    overflow-y: auto;
+    position: relative;
+}
+
+.timeline-year-labels {
+    position: sticky;
+    top: 0;
+    background-color: #f8fafc;
+    z-index: 10;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 /* Case Study Section */
@@ -560,13 +572,6 @@ body {
     border-color: white;
 }
 
-.timeline-years {
-    min-width: 200px;
-    font-size: 0.75rem;
-    color: #64748b;
-    display: flex;
-    justify-content: space-between;
-}
 
 /* Regression Analysis Styles */
 .regression-loading {

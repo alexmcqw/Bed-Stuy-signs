@@ -643,10 +643,10 @@ async function initTimeline() {
 
         // Add year labels at the top
         const yearLabels = document.createElement('div');
+        yearLabels.className = 'timeline-year-labels';
         yearLabels.style.display = 'flex';
         yearLabels.style.justifyContent = 'space-between';
-        yearLabels.style.padding = '0 150px 0 150px';
-        yearLabels.style.marginBottom = '1rem';
+        yearLabels.style.padding = '0 150px';
         yearLabels.style.fontSize = '0.75rem';
         yearLabels.style.color = '#64748b';
 
@@ -707,15 +707,6 @@ async function initTimeline() {
             lineContainer.appendChild(endDot);
 
             item.appendChild(lineContainer);
-
-            // Years display
-            const yearsDiv = document.createElement('div');
-            yearsDiv.className = 'timeline-years';
-            yearsDiv.innerHTML = `
-                <span>${business.startYear}</span>
-                <span>${business.endYear}</span>
-            `;
-            item.appendChild(yearsDiv);
 
             // Hover tooltip
             item.title = `${business.name}: ${business.startYear}-${business.endYear} (${business.isOpen ? 'Open' : 'Closed'}) - ${business.isOldSchool ? 'Old-school' : 'New-school'}`;
