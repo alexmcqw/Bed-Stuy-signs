@@ -606,6 +606,9 @@ async function initTimeline() {
             const actualStartDate = startDate || new Date(0);
             const actualEndDate = endDate || now;
 
+            // Event date: end date for closed businesses, start date for new/operating businesses
+            const eventDate = isClosed ? (endDate || actualEndDate) : (startDate || actualStartDate);
+
             // Update min/max for timeline range
             if (startDate && (!minDate || startDate < minDate)) {
                 minDate = startDate;
@@ -621,7 +624,9 @@ async function initTimeline() {
                 endDate: actualEndDate,
                 startYear: actualStartDate.getFullYear(),
                 endYear: actualEndDate.getFullYear(),
-                isOpen: !endDate
+                isOpen: !endDate,
+                eventDate: eventDate,
+                isClosed: isClosed
             });
         });
 
@@ -635,8 +640,13 @@ async function initTimeline() {
         const timelineEndYear = maxDate.getFullYear();
         const timelineYears = timelineEndYear - timelineStartYear;
 
-        // Sort businesses by start year
-        businesses.sort((a, b) => a.startYear - b.startYear);
+        // Sort businesses by event date (end date for closed, start date for new)
+        businesses.sort((a, b) => {
+            // Compare event dates
+            const dateA = a.eventDate.getTime();
+            const dateB = b.eventDate.getTime();
+            return dateA - dateB;
+        });
 
         // Clear container and create timeline
         timelineContainer.innerHTML = '';
