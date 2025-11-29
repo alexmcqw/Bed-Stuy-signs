@@ -514,117 +514,217 @@ function createMarkers(rows) {
 }
 
 // Timeline Visualization
-function initTimeline() {
+async function initTimeline() {
     const timelineContainer = document.getElementById('timeline-visualization');
     if (!timelineContainer || timelineContainer.dataset.initialized === 'true') return;
 
-    timelineContainer.innerHTML = '';
+    timelineContainer.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;">Loading timeline data...</div>';
     timelineContainer.dataset.initialized = 'true';
 
-    // Generate 100 stores with random data
-    const stores = [];
-    const storeTypes = [
-        { name: 'Bodega', type: 'traditional' },
-        { name: 'Barbershop', type: 'traditional' },
-        { name: 'Coffee Shop', type: 'modern' },
-        { name: 'Yoga Studio', type: 'modern' },
-        { name: 'Restaurant', type: 'traditional' },
-        { name: 'Boutique', type: 'modern' },
-        { name: 'Hardware Store', type: 'traditional' },
-        { name: 'Cafe', type: 'modern' }
-    ];
+    try {
+        // Load CSV data
+        const response = await fetch('data.csv');
+        if (!response.ok) {
+            throw new Error('Failed to load CSV data');
+        }
 
-    for (let i = 0; i < 100; i++) {
-        const storeType = storeTypes[Math.floor(Math.random() * storeTypes.length)];
-        const startYear = 2000 + Math.floor(Math.random() * 20);
-        const duration = Math.floor(Math.random() * 15) + 1;
-        const endYear = Math.min(startYear + duration, 2024);
-        const isOpen = endYear === 2024 && Math.random() > 0.3;
-
-        stores.push({
-            name: `${storeType.name} ${i + 1}`,
-            type: storeType.type,
-            startYear: startYear,
-            endYear: endYear,
-            isOpen: isOpen
+        const csvText = await response.text();
+        const parsed = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: false
         });
+
+        // Helper function to parse date (handles both ISO format and MM/DD/YYYY)
+        const parseDate = (dateStr) => {
+            if (!dateStr || dateStr.trim() === '') return null;
+            try {
+                // Try ISO format first
+                let date = new Date(dateStr);
+                if (!isNaN(date.getTime())) return date;
+                
+                // Try MM/DD/YYYY format
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    date = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+                    if (!isNaN(date.getTime())) return date;
+                }
+                return null;
+            } catch {
+                return null;
+            }
+        };
+
+        // Get all storefronts
+        const storefronts = parsed.data.filter(row => {
+            const isStorefront = row['LiveXYZSeptember132025_XYTableToPoint_isStorefront'];
+            return isStorefront === 'true' || isStorefront === 'TRUE';
+        });
+
+        // Get current date for "new" businesses
+        const now = new Date();
+
+        // Track active businesses per month
+        const monthMap = new Map();
+
+        storefronts.forEach(row => {
+            // Get predicted class (old-school vs new-school)
+            let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
+            predictedClass = String(predictedClass || '').trim();
+            // Remove leading numeral (0 or 1) and space from Predicted Class
+            if (predictedClass) {
+                predictedClass = predictedClass.replace(/^[01]\s+/, '');
+            }
+            const isOldSchool = predictedClass.toLowerCase().includes('old-school');
+            
+            // Skip if no predicted class
+            if (!predictedClass) return;
+            
+            const placeStatus = row['LiveXYZSeptember132025_XYTableToPoint_placeStatus'] || row['Status_simplified'] || '';
+            const isClosed = placeStatus.toLowerCase() === 'closed' || 
+                           placeStatus.toLowerCase() === 'permanently closed' || 
+                           placeStatus.toLowerCase() === 'temporarily closed';
+            
+            // Get start date (placeCreationDate_short or undefined)
+            const startDateStr = row['placeCreationDate_short'] || 
+                                row['LiveXYZSeptember132025_XYTableToPoint_placeCreationDate'] ||
+                                row['placeCreationDate'];
+            const startDate = parseDate(startDateStr);
+            
+            // Get end date (validityTime_end for closed, undefined for new/operating)
+            let endDate = null;
+            if (isClosed) {
+                const endDateStr = row['LiveXYZSeptember132025_XYTableToPoint_validityTime_end'];
+                endDate = parseDate(endDateStr);
+            }
+            // For new/operating businesses, endDate remains null (extends to now)
+
+            if (!startDate && !endDate) return; // Skip if no dates at all
+
+            // Determine the actual start and end months
+            const actualStartDate = startDate || new Date(0); // Use epoch if no start date (extends left)
+            const actualEndDate = endDate || now; // Use now if no end date (extends right)
+
+            // Generate all months this business was active
+            const startMonth = new Date(actualStartDate.getFullYear(), actualStartDate.getMonth(), 1);
+            const endMonth = new Date(actualEndDate.getFullYear(), actualEndDate.getMonth(), 1);
+            
+            let currentMonth = new Date(startMonth);
+            while (currentMonth <= endMonth) {
+                const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!monthMap.has(monthKey)) {
+                    monthMap.set(monthKey, { oldSchool: 0, newSchool: 0, total: 0 });
+                }
+                
+                const monthData = monthMap.get(monthKey);
+                monthData.total++;
+                if (isOldSchool) {
+                    monthData.oldSchool++;
+                } else {
+                    monthData.newSchool++;
+                }
+                
+                // Move to next month
+                currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+            }
+        });
+
+        // Convert to array and sort by date
+        const timelineArray = Array.from(monthMap.entries())
+            .map(([date, counts]) => ({
+                date,
+                month: new Date(date + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
+                oldSchool: counts.oldSchool,
+                newSchool: counts.newSchool,
+                total: counts.total
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+
+        // Create Chart.js area chart
+        timelineContainer.innerHTML = '<canvas id="timelineChart"></canvas>';
+        const ctx = document.getElementById('timelineChart');
+        
+        if (ctx && typeof Chart !== 'undefined' && timelineArray.length > 0) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timelineArray.map(d => d.month),
+                    datasets: [
+                        {
+                            label: 'Old-school Typography (Active)',
+                            data: timelineArray.map(d => d.oldSchool),
+                            borderColor: '#8B6F47',
+                            backgroundColor: 'rgba(139, 111, 71, 0.6)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'New-school Typography (Active)',
+                            data: timelineArray.map(d => d.newSchool),
+                            borderColor: '#E91E63',
+                            backgroundColor: 'rgba(233, 30, 99, 0.6)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#475569',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#334155',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#64748b',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: {
+                                color: 'rgba(226, 232, 240, 0.5)'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#64748b'
+                            },
+                            grid: {
+                                color: 'rgba(226, 232, 240, 0.5)'
+                            }
+                        }
+                    }
+                }
+            });
+        } else if (timelineArray.length === 0) {
+            timelineContainer.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;">No storefront timeline data available</div>';
+        }
+    } catch (error) {
+        console.error('Error loading timeline data:', error);
+        timelineContainer.innerHTML = `<div style="padding: 2rem; text-align: center; color: #ef4444;">Error loading timeline data: ${error.message}</div>`;
     }
-
-    // Sort by start year
-    stores.sort((a, b) => a.startYear - b.startYear);
-
-    // Create timeline
-    stores.forEach(store => {
-        const item = document.createElement('div');
-        item.className = 'timeline-item';
-
-        // Store name
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'timeline-store-name';
-        nameDiv.textContent = store.name;
-        item.appendChild(nameDiv);
-
-        // Timeline line container
-        const lineContainer = document.createElement('div');
-        lineContainer.className = 'timeline-line-container';
-
-        // Calculate positions (2000-2024 = 24 years)
-        const startPercent = ((store.startYear - 2000) / 24) * 100;
-        const endPercent = ((store.endYear - 2000) / 24) * 100;
-        const width = endPercent - startPercent;
-
-        // Line
-        const line = document.createElement('div');
-        line.className = `timeline-line ${store.type}`;
-        line.style.left = startPercent + '%';
-        line.style.width = width + '%';
-        lineContainer.appendChild(line);
-
-        // Start dot
-        const startDot = document.createElement('div');
-        startDot.className = `timeline-dot start ${store.isOpen && store.endYear === 2024 ? 'open' : 'closed'}`;
-        startDot.style.left = startPercent + '%';
-        lineContainer.appendChild(startDot);
-
-        // End dot
-        const endDot = document.createElement('div');
-        endDot.className = `timeline-dot end ${store.isOpen ? 'open' : 'closed'}`;
-        endDot.style.left = endPercent + '%';
-        lineContainer.appendChild(endDot);
-
-        item.appendChild(lineContainer);
-
-        // Years display
-        const yearsDiv = document.createElement('div');
-        yearsDiv.className = 'timeline-years';
-        yearsDiv.innerHTML = `
-            <span>${store.startYear}</span>
-            <span>${store.endYear}</span>
-        `;
-        item.appendChild(yearsDiv);
-
-        // Hover tooltip
-        item.title = `${store.name}: ${store.startYear}-${store.endYear} (${store.isOpen ? 'Open' : 'Closed'})`;
-
-        timelineContainer.appendChild(item);
-    });
-
-    // Add year labels at the top
-    const yearLabels = document.createElement('div');
-    yearLabels.style.display = 'flex';
-    yearLabels.style.justifyContent = 'space-between';
-    yearLabels.style.padding = '0 150px 0 150px';
-    yearLabels.style.marginBottom = '1rem';
-    yearLabels.style.fontSize = '0.75rem';
-    yearLabels.style.color = '#64748b';
-
-    for (let year = 2000; year <= 2024; year += 4) {
-        const label = document.createElement('span');
-        label.textContent = year;
-        yearLabels.appendChild(label);
-    }
-
-    timelineContainer.insertBefore(yearLabels, timelineContainer.firstChild);
 }
 
 // Regression Analysis with Multiple Visualizations
