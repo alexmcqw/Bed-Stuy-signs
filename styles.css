@@ -521,12 +521,12 @@ body {
     transform: translateY(-50%);
 }
 
-.timeline-line.traditional {
-    background-color: #334155;
+.timeline-line.old-school {
+    background-color: #8B6F47;
 }
 
-.timeline-line.modern {
-    background-color: #94a3b8;
+.timeline-line.new-school {
+    background-color: #E91E63;
 }
 
 .timeline-dot {
@@ -553,6 +553,11 @@ body {
 
 .timeline-dot.closed {
     background-color: #ef4444;
+}
+
+/* Override dot colors based on typography class when set inline */
+.timeline-dot[style*="background-color"] {
+    border-color: white;
 }
 
 .timeline-years {

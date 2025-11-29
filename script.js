@@ -555,23 +555,21 @@ async function initTimeline() {
             }
         };
 
-        // Get all storefronts
-        const storefronts = parsed.data.filter(row => {
-            const isStorefront = row['LiveXYZSeptember132025_XYTableToPoint_isStorefront'];
-            return isStorefront === 'true' || isStorefront === 'TRUE';
-        });
-
-        // Get current date for "new" businesses
+        // Get all storefronts with their data
+        const businesses = [];
         const now = new Date();
+        
+        // Determine date range for timeline (find min and max dates)
+        let minDate = null;
+        let maxDate = now;
 
-        // Track active businesses per month
-        const monthMap = new Map();
+        parsed.data.forEach(row => {
+            const isStorefront = row['LiveXYZSeptember132025_XYTableToPoint_isStorefront'];
+            if (isStorefront !== 'true' && isStorefront !== 'TRUE') return;
 
-        storefronts.forEach(row => {
             // Get predicted class (old-school vs new-school)
             let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
             predictedClass = String(predictedClass || '').trim();
-            // Remove leading numeral (0 or 1) and space from Predicted Class
             if (predictedClass) {
                 predictedClass = predictedClass.replace(/^[01]\s+/, '');
             }
@@ -597,130 +595,133 @@ async function initTimeline() {
                 const endDateStr = row['LiveXYZSeptember132025_XYTableToPoint_validityTime_end'];
                 endDate = parseDate(endDateStr);
             }
-            // For new/operating businesses, endDate remains null (extends to now)
 
             if (!startDate && !endDate) return; // Skip if no dates at all
 
-            // Determine the actual start and end months
-            const actualStartDate = startDate || new Date(0); // Use epoch if no start date (extends left)
-            const actualEndDate = endDate || now; // Use now if no end date (extends right)
+            const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || 
+                        row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 
+                        'Unknown';
 
-            // Generate all months this business was active
-            const startMonth = new Date(actualStartDate.getFullYear(), actualStartDate.getMonth(), 1);
-            const endMonth = new Date(actualEndDate.getFullYear(), actualEndDate.getMonth(), 1);
-            
-            let currentMonth = new Date(startMonth);
-            while (currentMonth <= endMonth) {
-                const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-                
-                if (!monthMap.has(monthKey)) {
-                    monthMap.set(monthKey, { oldSchool: 0, newSchool: 0, total: 0 });
-                }
-                
-                const monthData = monthMap.get(monthKey);
-                monthData.total++;
-                if (isOldSchool) {
-                    monthData.oldSchool++;
-                } else {
-                    monthData.newSchool++;
-                }
-                
-                // Move to next month
-                currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+            // Determine actual dates
+            const actualStartDate = startDate || new Date(0);
+            const actualEndDate = endDate || now;
+
+            // Update min/max for timeline range
+            if (startDate && (!minDate || startDate < minDate)) {
+                minDate = startDate;
             }
+            if (endDate && endDate > maxDate) {
+                maxDate = endDate;
+            }
+
+            businesses.push({
+                name: name,
+                isOldSchool: isOldSchool,
+                startDate: actualStartDate,
+                endDate: actualEndDate,
+                startYear: actualStartDate.getFullYear(),
+                endYear: actualEndDate.getFullYear(),
+                isOpen: !endDate
+            });
         });
 
-        // Convert to array and sort by date
-        const timelineArray = Array.from(monthMap.entries())
-            .map(([date, counts]) => ({
-                date,
-                month: new Date(date + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
-                oldSchool: counts.oldSchool,
-                newSchool: counts.newSchool,
-                total: counts.total
-            }))
-            .sort((a, b) => a.date.localeCompare(b.date));
-
-        // Create Chart.js area chart
-        timelineContainer.innerHTML = '<canvas id="timelineChart"></canvas>';
-        const ctx = document.getElementById('timelineChart');
-        
-        if (ctx && typeof Chart !== 'undefined' && timelineArray.length > 0) {
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: timelineArray.map(d => d.month),
-                    datasets: [
-                        {
-                            label: 'Old-school Typography (Active)',
-                            data: timelineArray.map(d => d.oldSchool),
-                            borderColor: '#8B6F47',
-                            backgroundColor: 'rgba(139, 111, 71, 0.6)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'New-school Typography (Active)',
-                            data: timelineArray.map(d => d.newSchool),
-                            borderColor: '#E91E63',
-                            backgroundColor: 'rgba(233, 30, 99, 0.6)',
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                color: '#475569',
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(30, 41, 59, 0.9)',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
-                            borderColor: '#334155',
-                            borderWidth: 1
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: {
-                                color: '#64748b',
-                                maxRotation: 45,
-                                minRotation: 45
-                            },
-                            grid: {
-                                color: 'rgba(226, 232, 240, 0.5)'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: '#64748b'
-                            },
-                            grid: {
-                                color: 'rgba(226, 232, 240, 0.5)'
-                            }
-                        }
-                    }
-                }
-            });
-        } else if (timelineArray.length === 0) {
+        if (businesses.length === 0) {
             timelineContainer.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;">No storefront timeline data available</div>';
+            return;
         }
+
+        // Set timeline range (use minDate or default to 2000)
+        const timelineStartYear = minDate ? minDate.getFullYear() : 2000;
+        const timelineEndYear = maxDate.getFullYear();
+        const timelineYears = timelineEndYear - timelineStartYear;
+
+        // Sort businesses by start year
+        businesses.sort((a, b) => a.startYear - b.startYear);
+
+        // Clear container and create timeline
+        timelineContainer.innerHTML = '';
+
+        // Add year labels at the top
+        const yearLabels = document.createElement('div');
+        yearLabels.style.display = 'flex';
+        yearLabels.style.justifyContent = 'space-between';
+        yearLabels.style.padding = '0 150px 0 150px';
+        yearLabels.style.marginBottom = '1rem';
+        yearLabels.style.fontSize = '0.75rem';
+        yearLabels.style.color = '#64748b';
+
+        const yearStep = Math.max(1, Math.floor(timelineYears / 6));
+        for (let year = timelineStartYear; year <= timelineEndYear; year += yearStep) {
+            const label = document.createElement('span');
+            label.textContent = year;
+            yearLabels.appendChild(label);
+        }
+        // Always show the last year
+        if (timelineEndYear % yearStep !== 0) {
+            const label = document.createElement('span');
+            label.textContent = timelineEndYear;
+            yearLabels.appendChild(label);
+        }
+        timelineContainer.appendChild(yearLabels);
+
+        // Create timeline rows for each business
+        businesses.forEach(business => {
+            const item = document.createElement('div');
+            item.className = 'timeline-item';
+
+            // Store name
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'timeline-store-name';
+            nameDiv.textContent = business.name;
+            item.appendChild(nameDiv);
+
+            // Timeline line container
+            const lineContainer = document.createElement('div');
+            lineContainer.className = 'timeline-line-container';
+
+            // Calculate positions (as percentage of timeline range)
+            const startPercent = ((business.startYear - timelineStartYear) / timelineYears) * 100;
+            const endPercent = ((business.endYear - timelineStartYear) / timelineYears) * 100;
+            const width = Math.max(1, endPercent - startPercent);
+
+            // Line (use brown for old-school, pink for new-school)
+            const line = document.createElement('div');
+            line.className = `timeline-line ${business.isOldSchool ? 'old-school' : 'new-school'}`;
+            line.style.left = startPercent + '%';
+            line.style.width = width + '%';
+            line.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
+            lineContainer.appendChild(line);
+
+            // Start dot
+            const startDot = document.createElement('div');
+            startDot.className = `timeline-dot start ${business.isOpen ? 'open' : 'closed'}`;
+            startDot.style.left = startPercent + '%';
+            startDot.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
+            lineContainer.appendChild(startDot);
+
+            // End dot
+            const endDot = document.createElement('div');
+            endDot.className = `timeline-dot end ${business.isOpen ? 'open' : 'closed'}`;
+            endDot.style.left = endPercent + '%';
+            endDot.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
+            lineContainer.appendChild(endDot);
+
+            item.appendChild(lineContainer);
+
+            // Years display
+            const yearsDiv = document.createElement('div');
+            yearsDiv.className = 'timeline-years';
+            yearsDiv.innerHTML = `
+                <span>${business.startYear}</span>
+                <span>${business.endYear}</span>
+            `;
+            item.appendChild(yearsDiv);
+
+            // Hover tooltip
+            item.title = `${business.name}: ${business.startYear}-${business.endYear} (${business.isOpen ? 'Open' : 'Closed'}) - ${business.isOldSchool ? 'Old-school' : 'New-school'}`;
+
+            timelineContainer.appendChild(item);
+        });
     } catch (error) {
         console.error('Error loading timeline data:', error);
         timelineContainer.innerHTML = `<div style="padding: 2rem; text-align: center; color: #ef4444;">Error loading timeline data: ${error.message}</div>`;
