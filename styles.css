@@ -427,6 +427,8 @@ body {
     padding: 1rem 0;
     margin-bottom: 1rem;
     border-bottom: 1px solid #e2e8f0;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 /* Case Study Section */
@@ -502,8 +504,8 @@ body {
 .timeline-item {
     display: flex;
     align-items: center;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 4px;
     transition: background-color 0.2s ease;
 }
