@@ -702,19 +702,23 @@ async function initTimeline() {
             line.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
             lineContainer.appendChild(line);
 
-            // Start dot
-            const startDot = document.createElement('div');
-            startDot.className = `timeline-dot start ${business.isOpen ? 'open' : 'closed'}`;
-            startDot.style.left = startPercent + '%';
-            startDot.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
-            lineContainer.appendChild(startDot);
+            // Start dot - only show for new businesses (closed businesses extend left)
+            if (!business.isClosed) {
+                const startDot = document.createElement('div');
+                startDot.className = `timeline-dot start ${business.isOpen ? 'open' : 'closed'}`;
+                startDot.style.left = startPercent + '%';
+                startDot.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
+                lineContainer.appendChild(startDot);
+            }
 
-            // End dot
-            const endDot = document.createElement('div');
-            endDot.className = `timeline-dot end ${business.isOpen ? 'open' : 'closed'}`;
-            endDot.style.left = endPercent + '%';
-            endDot.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
-            lineContainer.appendChild(endDot);
+            // End dot - only show for closed businesses (new businesses extend right)
+            if (business.isClosed) {
+                const endDot = document.createElement('div');
+                endDot.className = `timeline-dot end ${business.isOpen ? 'open' : 'closed'}`;
+                endDot.style.left = endPercent + '%';
+                endDot.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
+                lineContainer.appendChild(endDot);
+            }
 
             item.appendChild(lineContainer);
 
