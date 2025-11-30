@@ -680,11 +680,15 @@ async function initTimeline() {
                 const b = parseInt(baseColor.slice(5, 7), 16);
                 const fillTransparent = `rgba(${r}, ${g}, ${b}, 0.3)`;
                 
+                // Ensure dates are valid Date objects
+                const startDate = business.startDate instanceof Date ? business.startDate : new Date(business.startDate);
+                const endDate = business.endDate instanceof Date ? business.endDate : new Date(business.endDate);
+                
                 return {
                     name: business.name,
                     y: businesses.length - index - 1, // Reverse order so first business is at top
-                    x1: business.startDate,
-                    x2: business.endDate,
+                    x1: startDate,
+                    x2: endDate,
                     stroke: baseColor,
                     fill: baseColor,
                     fillTransparent: fillTransparent,
@@ -704,10 +708,11 @@ async function initTimeline() {
                 
                 // For permanently closed: extend from endDate to left edge
                 if (business.isPermanentlyClosed && business.endDate) {
+                    const endDate = business.endDate instanceof Date ? business.endDate : new Date(business.endDate);
                     return {
                         y: y,
                         x1: timelineStart,
-                        x2: business.endDate,
+                        x2: endDate,
                         stroke: baseColor,
                         fill: baseColor,
                         isExtension: true
@@ -715,9 +720,10 @@ async function initTimeline() {
                 }
                 // For operating: extend from startDate to right edge
                 if (business.isOperating && business.startDate) {
+                    const startDate = business.startDate instanceof Date ? business.startDate : new Date(business.startDate);
                     return {
                         y: y,
-                        x1: business.startDate,
+                        x1: startDate,
                         x2: timelineEnd,
                         stroke: baseColor,
                         fill: baseColor,
