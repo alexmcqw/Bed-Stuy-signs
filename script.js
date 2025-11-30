@@ -579,9 +579,12 @@ async function initTimeline() {
             if (!predictedClass) return;
             
             const placeStatus = row['LiveXYZSeptember132025_XYTableToPoint_placeStatus'] || row['Status_simplified'] || '';
-            const isClosed = placeStatus.toLowerCase() === 'closed' || 
-                           placeStatus.toLowerCase() === 'permanently closed' || 
-                           placeStatus.toLowerCase() === 'temporarily closed';
+            const statusLower = placeStatus.toLowerCase();
+            const isClosed = statusLower === 'closed' || 
+                           statusLower === 'permanently closed' || 
+                           statusLower === 'temporarily closed';
+            const isPermanentlyClosed = statusLower === 'permanently closed';
+            const isOperating = statusLower === 'operating';
             
             // Get start date (placeCreationDate_short or undefined)
             const startDateStr = row['placeCreationDate_short'] || 
@@ -626,7 +629,10 @@ async function initTimeline() {
                 endYear: actualEndDate.getFullYear(),
                 isOpen: !endDate,
                 eventDate: eventDate,
-                isClosed: isClosed
+                isClosed: isClosed,
+                isPermanentlyClosed: isPermanentlyClosed,
+                isOperating: isOperating,
+                placeStatus: placeStatus
             });
         });
 
@@ -662,6 +668,9 @@ async function initTimeline() {
             timelineContainer.innerHTML = '';
 
             // Prepare data for Observable Plot
+            const timelineStart = minDate || new Date(timelineStartYear, 0, 1);
+            const timelineEnd = maxDate;
+            
             // Create a unique index for each business to use as y-axis
             const plotData = businesses.map((business, index) => {
                 // Convert hex to rgba with transparency
@@ -680,10 +689,40 @@ async function initTimeline() {
                     fillTransparent: fillTransparent,
                     isOldSchool: business.isOldSchool,
                     isClosed: business.isClosed,
+                    isPermanentlyClosed: business.isPermanentlyClosed,
+                    isOperating: business.isOperating,
                     startYear: business.startYear,
                     endYear: business.endYear
                 };
             });
+            
+            // Create extension lines data
+            const extensionLines = businesses.map((business, index) => {
+                const baseColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
+                const y = businesses.length - index - 1;
+                
+                // For permanently closed: extend from endDate to left edge
+                if (business.isPermanentlyClosed && business.endDate) {
+                    return {
+                        y: y,
+                        x1: timelineStart,
+                        x2: business.endDate,
+                        fill: baseColor,
+                        isExtension: true
+                    };
+                }
+                // For operating: extend from startDate to right edge
+                if (business.isOperating && business.startDate) {
+                    return {
+                        y: y,
+                        x1: business.startDate,
+                        x2: timelineEnd,
+                        fill: baseColor,
+                        isExtension: true
+                    };
+                }
+                return null;
+            }).filter(d => d !== null);
 
             // Create the plot
             const plot = window.Plot.plot({
@@ -707,7 +746,17 @@ async function initTimeline() {
                     tickFormat: () => '' // Hide y-axis ticks
                 },
                 marks: [
-                    // Horizontal lines for each business - cleaner visualization
+                    // Extension lines (dashed) for permanently closed (left) and operating (right)
+                    ...(extensionLines.length > 0 ? [window.Plot.ruleX(extensionLines, {
+                        x1: "x1",
+                        x2: "x2",
+                        y: "y",
+                        stroke: "fill",
+                        strokeWidth: 1.5,
+                        strokeDasharray: "4,4",
+                        opacity: 0.5
+                    })] : []),
+                    // Main horizontal lines for each business
                     window.Plot.ruleX(plotData, {
                         x1: "x1",
                         x2: "x2",
