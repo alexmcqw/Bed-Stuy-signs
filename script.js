@@ -37,7 +37,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize charts
     initRevenueChart();
-    initWeeklyChart();
     
     // Initialize map if map tab is active by default
     const activeTab = document.querySelector('.tab-button.active');
@@ -123,71 +122,6 @@ function initRevenueChart() {
     });
 }
 
-// Weekly Chart for One Block in History
-function initWeeklyChart() {
-    const ctx = document.getElementById('weeklyChart');
-    if (!ctx) return;
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Daily Revenue',
-                data: [42000, 45000, 85000, 48000, 52000, 55000, 38000],
-                backgroundColor: function(context) {
-                    if (context.dataIndex === 2) {
-                        return '#334155'; // Highlight Wednesday
-                    }
-                    return '#94a3b8';
-                },
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderColor: '#334155',
-                    borderWidth: 1,
-                    callbacks: {
-                        label: function(context) {
-                            return 'Revenue: $' + context.parsed.y.toLocaleString();
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        color: '#64748b'
-                    },
-                    grid: {
-                        display: false
-                    }
-                },
-                y: {
-                    ticks: {
-                        color: '#64748b',
-                        callback: function(value) {
-                            return '$' + value.toLocaleString();
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(226, 232, 240, 0.5)'
-                    }
-                }
-            }
-        }
-    });
-}
 
 // Map Visualization with Leaflet
 let map = null;
