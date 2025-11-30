@@ -685,6 +685,7 @@ async function initTimeline() {
                     y: businesses.length - index - 1, // Reverse order so first business is at top
                     x1: business.startDate,
                     x2: business.endDate,
+                    stroke: baseColor,
                     fill: baseColor,
                     fillTransparent: fillTransparent,
                     isOldSchool: business.isOldSchool,
@@ -707,6 +708,7 @@ async function initTimeline() {
                         y: y,
                         x1: timelineStart,
                         x2: business.endDate,
+                        stroke: baseColor,
                         fill: baseColor,
                         isExtension: true
                     };
@@ -717,6 +719,7 @@ async function initTimeline() {
                         y: y,
                         x1: business.startDate,
                         x2: timelineEnd,
+                        stroke: baseColor,
                         fill: baseColor,
                         isExtension: true
                     };
@@ -752,9 +755,9 @@ async function initTimeline() {
                         x2: "x2",
                         y: "y",
                         stroke: "fill",
-                        strokeWidth: 1.5,
-                        strokeDasharray: "4,4",
-                        opacity: 0.5
+                        strokeWidth: 2,
+                        strokeDasharray: "6,4",
+                        opacity: 0.6
                     })] : []),
                     // Main horizontal lines for each business
                     window.Plot.ruleX(plotData, {
@@ -762,7 +765,7 @@ async function initTimeline() {
                         x2: "x2",
                         y: "y",
                         stroke: "fill",
-                        strokeWidth: 2,
+                        strokeWidth: 3,
                         title: (d) => `${d.name}: ${d.startYear}-${d.endYear} (${d.isClosed ? 'Closed' : 'Open'}) - ${d.isOldSchool ? 'Old-school' : 'New-school'}`
                     }),
                     // Business names on the left
