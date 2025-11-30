@@ -701,23 +701,11 @@ async function initTimeline() {
                 };
             });
             
-            // Create extension lines data
+            // Create extension lines data (only for operating businesses)
             const extensionLines = businesses.map((business, index) => {
                 const baseColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
                 const y = businesses.length - index - 1;
                 
-                // For permanently closed: extend from endDate to left edge
-                if (business.isPermanentlyClosed && business.endDate) {
-                    const endDate = business.endDate instanceof Date ? business.endDate : new Date(business.endDate);
-                    return {
-                        y: y,
-                        x1: timelineStart,
-                        x2: endDate,
-                        stroke: baseColor,
-                        fill: baseColor,
-                        isExtension: true
-                    };
-                }
                 // For operating: extend from startDate to right edge
                 if (business.isOperating && business.startDate) {
                     const startDate = business.startDate instanceof Date ? business.startDate : new Date(business.startDate);
