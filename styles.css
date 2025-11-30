@@ -442,6 +442,17 @@ body {
     position: relative;
 }
 
+/* Make Observable Plot x-axis sticky */
+.timeline-visualization svg g[aria-label*="x-axis"],
+.timeline-visualization svg g[transform*="translate(0"] {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f8fafc;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
 .timeline-year-labels {
     position: sticky;
     top: 0;

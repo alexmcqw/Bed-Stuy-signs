@@ -747,10 +747,14 @@ async function initTimeline() {
                     domain: [minDate || new Date(timelineStartYear, 0, 1), maxDate],
                     grid: true,
                     label: null,
+                    axis: "top",
                     ticks: timelineEndYear - timelineStartYear,
                     tickFormat: (d) => {
                         const year = new Date(d).getFullYear();
-                        return year % Math.max(1, Math.floor((timelineEndYear - timelineStartYear) / 6)) === 0 ? year : '';
+                        if (year % Math.max(1, Math.floor((timelineEndYear - timelineStartYear) / 6)) === 0) {
+                            return String(year); // Remove commas by using String() instead of locale formatting
+                        }
+                        return '';
                     }
                 },
                 y: {
@@ -812,6 +816,29 @@ async function initTimeline() {
             });
 
             timelineContainer.appendChild(plot);
+            
+            // Make x-axis sticky after plot is rendered
+            setTimeout(() => {
+                const svg = timelineContainer.querySelector('svg');
+                if (svg) {
+                    // Find x-axis group (usually the first g element with transform)
+                    const xAxisGroups = svg.querySelectorAll('g[transform*="translate"]');
+                    if (xAxisGroups.length > 0) {
+                        // The top axis should be one of the first groups
+                        const topAxis = Array.from(xAxisGroups).find(g => {
+                            const transform = g.getAttribute('transform') || '';
+                            // Check if it's positioned at the top (y translation near 0 or small)
+                            return transform.includes('translate(0') || transform.includes('translate(');
+                        });
+                        if (topAxis) {
+                            topAxis.style.position = 'sticky';
+                            topAxis.style.top = '0';
+                            topAxis.style.zIndex = '10';
+                            topAxis.style.backgroundColor = '#f8fafc';
+                        }
+                    }
+                }
+            }, 100);
         };
 
         waitForPlot();
