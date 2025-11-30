@@ -760,21 +760,23 @@ async function initTimeline() {
                 },
                 marks: [
                     // Extension lines (dashed) for permanently closed (left) and operating (right)
-                    ...(extensionLines.length > 0 ? [window.Plot.ruleX(extensionLines, {
+                    ...(extensionLines.length > 0 ? [window.Plot.link(extensionLines, {
                         x1: "x1",
                         x2: "x2",
-                        y: "y",
-                        stroke: "fill",
+                        y1: "y",
+                        y2: "y",
+                        stroke: "stroke",
                         strokeWidth: 2,
                         strokeDasharray: "6,4",
                         opacity: 0.6
                     })] : []),
                     // Main horizontal lines for each business
-                    window.Plot.ruleX(plotData, {
+                    window.Plot.link(plotData, {
                         x1: "x1",
                         x2: "x2",
-                        y: "y",
-                        stroke: "fill",
+                        y1: "y",
+                        y2: "y",
+                        stroke: "stroke",
                         strokeWidth: 3,
                         title: (d) => `${d.name}: ${d.startYear}-${d.endYear} (${d.isClosed ? 'Closed' : 'Open'}) - ${d.isOldSchool ? 'Old-school' : 'New-school'}`
                     }),
