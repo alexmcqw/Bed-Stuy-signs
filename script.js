@@ -648,85 +648,95 @@ async function initTimeline() {
             return dateA - dateB;
         });
 
-        // Clear container and create timeline
-        timelineContainer.innerHTML = '';
-
-        // Add year labels at the top
-        const yearLabels = document.createElement('div');
-        yearLabels.className = 'timeline-year-labels';
-        yearLabels.style.display = 'flex';
-        yearLabels.style.justifyContent = 'space-between';
-        yearLabels.style.padding = '0 150px';
-        yearLabels.style.fontSize = '0.75rem';
-        yearLabels.style.color = '#64748b';
-
-        const yearStep = Math.max(1, Math.floor(timelineYears / 6));
-        for (let year = timelineStartYear; year <= timelineEndYear; year += yearStep) {
-            const label = document.createElement('span');
-            label.textContent = year;
-            yearLabels.appendChild(label);
-        }
-        // Always show the last year
-        if (timelineEndYear % yearStep !== 0) {
-            const label = document.createElement('span');
-            label.textContent = timelineEndYear;
-            yearLabels.appendChild(label);
-        }
-        timelineContainer.appendChild(yearLabels);
-
-        // Create timeline rows for each business
-        businesses.forEach(business => {
-            const item = document.createElement('div');
-            item.className = 'timeline-item';
-
-            // Store name
-            const nameDiv = document.createElement('div');
-            nameDiv.className = 'timeline-store-name';
-            nameDiv.textContent = business.name;
-            item.appendChild(nameDiv);
-
-            // Timeline line container
-            const lineContainer = document.createElement('div');
-            lineContainer.className = 'timeline-line-container';
-
-            // Calculate positions (as percentage of timeline range)
-            const startPercent = ((business.startYear - timelineStartYear) / timelineYears) * 100;
-            const endPercent = ((business.endYear - timelineStartYear) / timelineYears) * 100;
-            const width = Math.max(1, endPercent - startPercent);
-
-            // Line (use brown for old-school, pink for new-school)
-            const line = document.createElement('div');
-            line.className = `timeline-line ${business.isOldSchool ? 'old-school' : 'new-school'}`;
-            line.style.left = startPercent + '%';
-            line.style.width = width + '%';
-            line.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
-            lineContainer.appendChild(line);
-
-            // Start dot - only show for new businesses (closed businesses extend left)
-            if (!business.isClosed) {
-                const startDot = document.createElement('div');
-                startDot.className = `timeline-dot start ${business.isOpen ? 'open' : 'closed'}`;
-                startDot.style.left = startPercent + '%';
-                startDot.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
-                lineContainer.appendChild(startDot);
+        // Wait for Observable Plot to be available
+        const waitForPlot = () => {
+            if (window.Plot) {
+                createObservablePlotTimeline();
+            } else {
+                setTimeout(waitForPlot, 100);
             }
+        };
 
-            // End dot - only show for closed businesses (new businesses extend right)
-            if (business.isClosed) {
-                const endDot = document.createElement('div');
-                endDot.className = `timeline-dot end ${business.isOpen ? 'open' : 'closed'}`;
-                endDot.style.left = endPercent + '%';
-                endDot.style.backgroundColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
-                lineContainer.appendChild(endDot);
-            }
+        const createObservablePlotTimeline = () => {
+            // Clear container
+            timelineContainer.innerHTML = '';
 
-            item.appendChild(lineContainer);
+            // Prepare data for Observable Plot
+            // Create a unique index for each business to use as y-axis
+            const plotData = businesses.map((business, index) => ({
+                name: business.name,
+                y: businesses.length - index - 1, // Reverse order so first business is at top
+                x1: business.startDate,
+                x2: business.endDate,
+                fill: business.isOldSchool ? '#8B6F47' : '#E91E63',
+                isOldSchool: business.isOldSchool,
+                isClosed: business.isClosed,
+                startYear: business.startYear,
+                endYear: business.endYear
+            }));
 
-            // Hover tooltip
-            item.title = `${business.name}: ${business.startYear}-${business.endYear} (${business.isOpen ? 'Open' : 'Closed'}) - ${business.isOldSchool ? 'Old-school' : 'New-school'}`;
+            // Create the plot
+            const plot = window.Plot.plot({
+                marginLeft: 200, // Space for business names
+                marginTop: 60, // Space for year labels
+                height: Math.max(400, businesses.length * 20), // Dynamic height based on number of businesses
+                x: {
+                    type: "time",
+                    domain: [minDate || new Date(timelineStartYear, 0, 1), maxDate],
+                    grid: true,
+                    label: null,
+                    ticks: timelineEndYear - timelineStartYear,
+                    tickFormat: (d) => {
+                        const year = new Date(d).getFullYear();
+                        return year % Math.max(1, Math.floor((timelineEndYear - timelineStartYear) / 6)) === 0 ? year : '';
+                    }
+                },
+                y: {
+                    domain: plotData.map(d => d.y),
+                    label: null,
+                    tickFormat: () => '' // Hide y-axis ticks
+                },
+                marks: [
+                    // Horizontal bars for each business
+                    window.Plot.rectY(plotData, {
+                        x1: "x1",
+                        x2: "x2",
+                        y: "y",
+                        fill: "fill",
+                        title: (d) => `${d.name}: ${d.startYear}-${d.endYear} (${d.isClosed ? 'Closed' : 'Open'}) - ${d.isOldSchool ? 'Old-school' : 'New-school'}`,
+                        height: 12
+                    }),
+                    // Business names on the left
+                    window.Plot.text(plotData, {
+                        x: minDate || new Date(timelineStartYear, 0, 1),
+                        y: "y",
+                        text: "name",
+                        dx: -10,
+                        textAnchor: "end",
+                        fontSize: 11,
+                        fill: "#475569"
+                    }),
+                    // Start dots for new businesses only
+                    window.Plot.dot(plotData.filter(d => !d.isClosed), {
+                        x: "x1",
+                        y: "y",
+                        fill: "fill",
+                        r: 4
+                    }),
+                    // End dots for closed businesses only
+                    window.Plot.dot(plotData.filter(d => d.isClosed), {
+                        x: "x2",
+                        y: "y",
+                        fill: "fill",
+                        r: 4
+                    })
+                ]
+            });
 
-            timelineContainer.appendChild(item);
-        });
+            timelineContainer.appendChild(plot);
+        };
+
+        waitForPlot();
     } catch (error) {
         console.error('Error loading timeline data:', error);
         timelineContainer.innerHTML = `<div style="padding: 2rem; text-align: center; color: #ef4444;">Error loading timeline data: ${error.message}</div>`;
