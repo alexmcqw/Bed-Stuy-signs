@@ -727,6 +727,10 @@ async function initTimeline() {
                 return null;
             }).filter(d => d !== null);
 
+            // Debug: log data to verify
+            console.log('Plot data sample:', plotData.slice(0, 3));
+            console.log('Extension lines:', extensionLines.length);
+            
             // Create the plot
             const plot = window.Plot.plot({
                 marginLeft: 200, // Space for business names
