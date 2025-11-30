@@ -663,17 +663,27 @@ async function initTimeline() {
 
             // Prepare data for Observable Plot
             // Create a unique index for each business to use as y-axis
-            const plotData = businesses.map((business, index) => ({
-                name: business.name,
-                y: businesses.length - index - 1, // Reverse order so first business is at top
-                x1: business.startDate,
-                x2: business.endDate,
-                fill: business.isOldSchool ? '#8B6F47' : '#E91E63',
-                isOldSchool: business.isOldSchool,
-                isClosed: business.isClosed,
-                startYear: business.startYear,
-                endYear: business.endYear
-            }));
+            const plotData = businesses.map((business, index) => {
+                // Convert hex to rgba with transparency
+                const baseColor = business.isOldSchool ? '#8B6F47' : '#E91E63';
+                const r = parseInt(baseColor.slice(1, 3), 16);
+                const g = parseInt(baseColor.slice(3, 5), 16);
+                const b = parseInt(baseColor.slice(5, 7), 16);
+                const fillTransparent = `rgba(${r}, ${g}, ${b}, 0.3)`;
+                
+                return {
+                    name: business.name,
+                    y: businesses.length - index - 1, // Reverse order so first business is at top
+                    x1: business.startDate,
+                    x2: business.endDate,
+                    fill: baseColor,
+                    fillTransparent: fillTransparent,
+                    isOldSchool: business.isOldSchool,
+                    isClosed: business.isClosed,
+                    startYear: business.startYear,
+                    endYear: business.endYear
+                };
+            });
 
             // Create the plot
             const plot = window.Plot.plot({
@@ -702,7 +712,7 @@ async function initTimeline() {
                         x1: "x1",
                         x2: "x2",
                         y: "y",
-                        fill: (d) => window.Plot.opacity(d.fill, 0.3), // Make bars semi-transparent
+                        fill: "fillTransparent", // Use rgba color with transparency
                         stroke: "fill",
                         strokeWidth: 1.5,
                         title: (d) => `${d.name}: ${d.startYear}-${d.endYear} (${d.isClosed ? 'Closed' : 'Open'}) - ${d.isOldSchool ? 'Old-school' : 'New-school'}`,
