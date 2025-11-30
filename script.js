@@ -697,14 +697,16 @@ async function initTimeline() {
                     tickFormat: () => '' // Hide y-axis ticks
                 },
                 marks: [
-                    // Horizontal bars for each business
+                    // Horizontal bars for each business - make them thinner and more transparent
                     window.Plot.rectY(plotData, {
                         x1: "x1",
                         x2: "x2",
                         y: "y",
-                        fill: "fill",
+                        fill: (d) => window.Plot.opacity(d.fill, 0.3), // Make bars semi-transparent
+                        stroke: "fill",
+                        strokeWidth: 1.5,
                         title: (d) => `${d.name}: ${d.startYear}-${d.endYear} (${d.isClosed ? 'Closed' : 'Open'}) - ${d.isOldSchool ? 'Old-school' : 'New-school'}`,
-                        height: 12
+                        height: 8 // Make bars thinner
                     }),
                     // Business names on the left
                     window.Plot.text(plotData, {
@@ -716,19 +718,23 @@ async function initTimeline() {
                         fontSize: 11,
                         fill: "#475569"
                     }),
-                    // Start dots for new businesses only
+                    // Start dots for new businesses only - make them more prominent
                     window.Plot.dot(plotData.filter(d => !d.isClosed), {
                         x: "x1",
                         y: "y",
                         fill: "fill",
-                        r: 4
+                        stroke: "#fff",
+                        strokeWidth: 1.5,
+                        r: 5
                     }),
-                    // End dots for closed businesses only
+                    // End dots for closed businesses only - make them more prominent
                     window.Plot.dot(plotData.filter(d => d.isClosed), {
                         x: "x2",
                         y: "y",
                         fill: "fill",
-                        r: 4
+                        stroke: "#fff",
+                        strokeWidth: 1.5,
+                        r: 5
                     })
                 ]
             });
