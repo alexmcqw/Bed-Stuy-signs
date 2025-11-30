@@ -707,16 +707,14 @@ async function initTimeline() {
                     tickFormat: () => '' // Hide y-axis ticks
                 },
                 marks: [
-                    // Horizontal bars for each business - make them thinner and more transparent
-                    window.Plot.rectY(plotData, {
+                    // Horizontal lines for each business - cleaner visualization
+                    window.Plot.ruleX(plotData, {
                         x1: "x1",
                         x2: "x2",
                         y: "y",
-                        fill: "fillTransparent", // Use rgba color with transparency
                         stroke: "fill",
-                        strokeWidth: 1.5,
-                        title: (d) => `${d.name}: ${d.startYear}-${d.endYear} (${d.isClosed ? 'Closed' : 'Open'}) - ${d.isOldSchool ? 'Old-school' : 'New-school'}`,
-                        height: 8 // Make bars thinner
+                        strokeWidth: 2,
+                        title: (d) => `${d.name}: ${d.startYear}-${d.endYear} (${d.isClosed ? 'Closed' : 'Open'}) - ${d.isOldSchool ? 'Old-school' : 'New-school'}`
                     }),
                     // Business names on the left
                     window.Plot.text(plotData, {
