@@ -1471,13 +1471,29 @@ async function initComparisonVisualization() {
                 return item.confidence > 0 && item.imageUrl && item.imageUrl.length > 0;
             })
 
-        // Separate old-school and new-school
-        const oldSchool = imageData.filter(d => d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
-        const newSchool = imageData.filter(d => !d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
+        // Group by rounded confidence level
+        const groupByConfidence = (items) => {
+            const groups = {};
+            items.forEach(item => {
+                const confidenceLevel = Math.round(item.confidence);
+                if (!groups[confidenceLevel]) {
+                    groups[confidenceLevel] = [];
+                }
+                groups[confidenceLevel].push(item);
+            });
+            return groups;
+        };
 
-        // Create visualization
-        const maxLength = Math.max(oldSchool.length, newSchool.length);
-        
+        const oldSchoolGroups = groupByConfidence(imageData.filter(d => d.isOldSchool));
+        const newSchoolGroups = groupByConfidence(imageData.filter(d => !d.isOldSchool));
+
+        // Get all confidence levels, sorted descending
+        const allConfidenceLevels = [...new Set([
+            ...Object.keys(oldSchoolGroups).map(Number),
+            ...Object.keys(newSchoolGroups).map(Number)
+        ])].sort((a, b) => b - a);
+
+        // Create visualization structure
         container.innerHTML = `
             <div class="comparison-container">
                 <div class="comparison-column old-school-column">
@@ -1494,60 +1510,83 @@ async function initComparisonVisualization() {
         const oldSchoolContainer = document.getElementById('old-school-images');
         const newSchoolContainer = document.getElementById('new-school-images');
 
-        // Render images with gradient backgrounds
-        for (let i = 0; i < maxLength; i++) {
-            // Old-school image
-            if (i < oldSchool.length) {
-                const item = oldSchool[i];
-                const bgColor = getOldSchoolGradientColor(item.confidence);
-                
-                const imgDiv = document.createElement('div');
-                imgDiv.className = 'comparison-image-item';
-                imgDiv.style.backgroundColor = bgColor;
-                imgDiv.innerHTML = `
-                    <img src="${item.imageUrl}" alt="Old-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
-                    <div class="comparison-tooltip">
-                        <div class="tooltip-content">
-                            <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
-                            <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
-                            <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
-                        </div>
-                    </div>
-                `;
-                oldSchoolContainer.appendChild(imgDiv);
-            } else {
-                // Empty placeholder to maintain alignment
-                const placeholder = document.createElement('div');
-                placeholder.className = 'comparison-image-item empty';
-                oldSchoolContainer.appendChild(placeholder);
+        // Render each confidence level as a block
+        allConfidenceLevels.forEach(confidenceLevel => {
+            const oldSchoolItems = oldSchoolGroups[confidenceLevel] || [];
+            const newSchoolItems = newSchoolGroups[confidenceLevel] || [];
+
+            // Create confidence level header for old-school
+            if (oldSchoolItems.length > 0) {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'confidence-level-header';
+                headerDiv.textContent = `${confidenceLevel}%`;
+                oldSchoolContainer.appendChild(headerDiv);
             }
 
-            // New-school image
-            if (i < newSchool.length) {
-                const item = newSchool[i];
-                const bgColor = getNewSchoolGradientColor(item.confidence);
-                
-                const imgDiv = document.createElement('div');
-                imgDiv.className = 'comparison-image-item';
-                imgDiv.style.backgroundColor = bgColor;
-                imgDiv.innerHTML = `
-                    <img src="${item.imageUrl}" alt="New-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
-                    <div class="comparison-tooltip">
-                        <div class="tooltip-content">
-                            <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
-                            <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
-                            <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
-                        </div>
-                    </div>
-                `;
-                newSchoolContainer.appendChild(imgDiv);
-            } else {
-                // Empty placeholder to maintain alignment
-                const placeholder = document.createElement('div');
-                placeholder.className = 'comparison-image-item empty';
-                newSchoolContainer.appendChild(placeholder);
+            // Create confidence level header for new-school
+            if (newSchoolItems.length > 0) {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'confidence-level-header';
+                headerDiv.textContent = `${confidenceLevel}%`;
+                newSchoolContainer.appendChild(headerDiv);
             }
-        }
+
+            // Create image grid for this confidence level
+            const maxItems = Math.max(oldSchoolItems.length, newSchoolItems.length);
+            const itemsPerRow = 4; // Number of images per row
+
+            // Render old-school images in grid
+            if (oldSchoolItems.length > 0) {
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'confidence-level-grid';
+                
+                oldSchoolItems.forEach(item => {
+                    const bgColor = getOldSchoolGradientColor(item.confidence);
+                    const imgDiv = document.createElement('div');
+                    imgDiv.className = 'comparison-image-item';
+                    imgDiv.style.backgroundColor = bgColor;
+                    imgDiv.innerHTML = `
+                        <img src="${item.imageUrl}" alt="Old-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
+                        <div class="comparison-tooltip">
+                            <div class="tooltip-content">
+                                <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
+                                <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
+                                <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
+                            </div>
+                        </div>
+                    `;
+                    gridDiv.appendChild(imgDiv);
+                });
+                
+                oldSchoolContainer.appendChild(gridDiv);
+            }
+
+            // Render new-school images in grid
+            if (newSchoolItems.length > 0) {
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'confidence-level-grid';
+                
+                newSchoolItems.forEach(item => {
+                    const bgColor = getNewSchoolGradientColor(item.confidence);
+                    const imgDiv = document.createElement('div');
+                    imgDiv.className = 'comparison-image-item';
+                    imgDiv.style.backgroundColor = bgColor;
+                    imgDiv.innerHTML = `
+                        <img src="${item.imageUrl}" alt="New-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
+                        <div class="comparison-tooltip">
+                            <div class="tooltip-content">
+                                <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
+                                <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
+                                <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
+                            </div>
+                        </div>
+                    `;
+                    gridDiv.appendChild(imgDiv);
+                });
+                
+                newSchoolContainer.appendChild(gridDiv);
+            }
+        });
 
     } catch (error) {
         console.error('Error loading comparison visualization:', error);
