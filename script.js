@@ -1406,20 +1406,15 @@ async function initComparisonVisualization() {
             dynamicTyping: false
         });
 
-        // Get all column names to find column AE (index 30, 0-indexed)
+        // Get all column names to find columns
         const headers = parsed.meta.fields || Object.keys(parsed.data[0] || {});
         const columnAE = headers[30]; // Column AE is the 31st column (0-indexed: 30)
-        
-        // Try to find confidence column (common names)
-        const confidenceCol = headers.find(h => 
-            h && (h.toLowerCase().includes('confidence') || 
-                 h.toLowerCase().includes('prediction confidence') ||
-                 h.toLowerCase().includes('confidence score'))
-        ) || headers.find((h, i) => i === 31); // Try column AF as fallback
+        const columnBP = headers[67]; // Column BP is the 68th column (0-indexed: 67)
+        const columnBQ = headers[68]; // Column BQ is the 69th column (0-indexed: 68)
 
-        console.log('Column AE:', columnAE);
-        console.log('Confidence column:', confidenceCol);
-        console.log('All headers:', headers);
+        console.log('Column AE (images):', columnAE);
+        console.log('Column BP (old-school confidence):', columnBP);
+        console.log('Column BQ (new-school confidence):', columnBQ);
 
         // Filter and process data
         const imageData = parsed.data
@@ -1433,8 +1428,9 @@ async function initComparisonVisualization() {
                 let predictedClass = (row['Predicted Class'] || '').trim().replace(/^[01]\s+/, '');
                 const isOldSchool = predictedClass.toLowerCase().includes('old-school');
                 
-                // Get confidence (try to parse as percentage or decimal)
+                // Get confidence from appropriate column (BP for old-school, BQ for new-school)
                 let confidence = 0;
+                const confidenceCol = isOldSchool ? columnBP : columnBQ;
                 if (confidenceCol && row[confidenceCol]) {
                     const confStr = String(row[confidenceCol]).trim();
                     // Try parsing as percentage (e.g., "95%") or decimal (e.g., "0.95")
@@ -1450,9 +1446,10 @@ async function initComparisonVisualization() {
                     imageUrl: imageUrl.trim(),
                     predictedClass,
                     isOldSchool,
-                    confidence: confidence || 50 // Default to 50% if not found
+                    confidence: confidence || 0 // Default to 0 if not found
                 };
-            });
+            })
+            .filter(item => item.confidence > 0); // Only include items with valid confidence values
 
         // Separate old-school and new-school
         const oldSchool = imageData.filter(d => d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
