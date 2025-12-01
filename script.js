@@ -1545,16 +1545,26 @@ async function initComparisonVisualization() {
                     const imgDiv = document.createElement('div');
                     imgDiv.className = 'comparison-image-item';
                     imgDiv.style.backgroundColor = bgColor;
-                    imgDiv.innerHTML = `
-                        <img src="${item.imageUrl}" alt="Old-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
-                        <div class="comparison-tooltip">
-                            <div class="tooltip-content">
-                                <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
-                                <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
-                                <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
-                            </div>
+                    const img = document.createElement('img');
+                    img.src = item.imageUrl;
+                    img.alt = 'Old-school storefront';
+                    img.loading = 'lazy'; // Lazy load images
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                        this.parentElement.innerHTML = '<div class="image-error">Image unavailable</div>';
+                    };
+                    imgDiv.appendChild(img);
+                    
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'comparison-tooltip';
+                    tooltip.innerHTML = `
+                        <div class="tooltip-content">
+                            <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
+                            <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
+                            <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
                         </div>
                     `;
+                    imgDiv.appendChild(tooltip);
                     gridDiv.appendChild(imgDiv);
                 });
                 
@@ -1571,16 +1581,26 @@ async function initComparisonVisualization() {
                     const imgDiv = document.createElement('div');
                     imgDiv.className = 'comparison-image-item';
                     imgDiv.style.backgroundColor = bgColor;
-                    imgDiv.innerHTML = `
-                        <img src="${item.imageUrl}" alt="New-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
-                        <div class="comparison-tooltip">
-                            <div class="tooltip-content">
-                                <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
-                                <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
-                                <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
-                            </div>
+                    const img = document.createElement('img');
+                    img.src = item.imageUrl;
+                    img.alt = 'New-school storefront';
+                    img.loading = 'lazy'; // Lazy load images
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                        this.parentElement.innerHTML = '<div class="image-error">Image unavailable</div>';
+                    };
+                    imgDiv.appendChild(img);
+                    
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'comparison-tooltip';
+                    tooltip.innerHTML = `
+                        <div class="tooltip-content">
+                            <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
+                            <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
+                            <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
                         </div>
                     `;
+                    imgDiv.appendChild(tooltip);
                     gridDiv.appendChild(imgDiv);
                 });
                 
