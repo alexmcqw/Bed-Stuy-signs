@@ -188,6 +188,7 @@ body {
 .storefront-image-annotated .image-wrapper {
     position: relative;
     width: 100%;
+    overflow: visible; /* Allow labels to extend outside image bounds */
 }
 
 .storefront-image-annotated img {
@@ -210,6 +211,15 @@ body {
 .annotation {
     position: absolute;
     pointer-events: auto;
+    z-index: 10;
+}
+
+.annotation-left {
+    /* Labels on the left side */
+}
+
+.annotation-right {
+    /* Labels on the right side */
 }
 
 .annotation-label {
@@ -221,7 +231,7 @@ body {
     font-weight: 500;
     white-space: nowrap;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    z-index: 10;
+    display: inline-block;
 }
 
 .annotation-arrow {

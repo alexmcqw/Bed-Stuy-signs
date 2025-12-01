@@ -1,5 +1,8 @@
 // Annotation Helper Function
-function addAnnotation(containerId, label, x, y, arrowX, arrowY, direction = 'auto') {
+// side: 'left' or 'right' - which side of the image the label should be on
+// targetX, targetY: position in the image where the arrow should point (percentages)
+// labelY: vertical position of the label (percentage)
+function addAnnotation(containerId, label, side, targetX, targetY, labelY) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -36,10 +39,18 @@ function addAnnotation(containerId, label, x, y, arrowX, arrowY, direction = 'au
 
     const annotation = document.createElement('div');
     annotation.className = 'annotation';
+    annotation.classList.add(`annotation-${side}`);
     
-    // Position the label (x, y are percentages of image dimensions)
-    annotation.style.left = `${x}%`;
-    annotation.style.top = `${y}%`;
+    // Position label on the side
+    if (side === 'left') {
+        annotation.style.left = '-15%'; // Position to the left of the image
+        annotation.style.textAlign = 'right';
+    } else {
+        annotation.style.left = '115%'; // Position to the right of the image
+        annotation.style.textAlign = 'left';
+    }
+    annotation.style.top = `${labelY}%`;
+    annotation.style.transform = 'translateY(-50%)'; // Center vertically on labelY
     
     // Create label
     const labelEl = document.createElement('div');
@@ -59,10 +70,20 @@ function addAnnotation(containerId, label, x, y, arrowX, arrowY, direction = 'au
     
     const markerId = `arrowhead-${containerId}`;
     const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    arrow.setAttribute('x1', `${arrowX}%`);
-    arrow.setAttribute('y1', `${arrowY}%`);
-    arrow.setAttribute('x2', `${x}%`);
-    arrow.setAttribute('y2', `${y}%`);
+    
+    // Arrow starts from label position and points to target in image
+    let arrowStartX, arrowStartY;
+    if (side === 'left') {
+        arrowStartX = 0; // Start at left edge of image
+    } else {
+        arrowStartX = 100; // Start at right edge of image
+    }
+    arrowStartY = labelY; // Same vertical position as label
+    
+    arrow.setAttribute('x1', `${arrowStartX}%`);
+    arrow.setAttribute('y1', `${arrowStartY}%`);
+    arrow.setAttribute('x2', `${targetX}%`);
+    arrow.setAttribute('y2', `${targetY}%`);
     arrow.setAttribute('stroke', '#1e293b');
     arrow.setAttribute('stroke-width', '2');
     arrow.setAttribute('marker-end', `url(#${markerId})`);
@@ -76,17 +97,20 @@ function addAnnotation(containerId, label, x, y, arrowX, arrowY, direction = 'au
 // Initialize annotations when page loads
 function initAnnotations() {
     // Example annotations - you can customize these
-    // Format: addAnnotation(containerId, label, labelX%, labelY%, arrowX%, arrowY%)
+    // Format: addAnnotation(containerId, label, side, targetX%, targetY%, labelY%)
+    // side: 'left' or 'right' - which side of the image the label should be on
+    // targetX, targetY: position in the image where the arrow should point (percentages)
+    // labelY: vertical position of the label (percentage)
     
     // Annotations for first image (storefront2.jpg)
-    addAnnotation('annotations1', 'Storefront Sign', 20, 15, 50, 25);
-    addAnnotation('annotations1', 'Window Display', 80, 40, 50, 50);
-    addAnnotation('annotations1', 'Doorway', 30, 70, 50, 85);
+    addAnnotation('annotations1', 'Storefront Sign', 'left', 50, 25, 20);
+    addAnnotation('annotations1', 'Window Display', 'right', 50, 50, 45);
+    addAnnotation('annotations1', 'Doorway', 'left', 50, 85, 70);
     
     // Annotations for second image (storefront1.jpeg)
-    addAnnotation('annotations2', 'Typography Style', 25, 20, 50, 30);
-    addAnnotation('annotations2', 'Color Scheme', 75, 45, 50, 55);
-    addAnnotation('annotations2', 'Architectural Detail', 40, 75, 50, 80);
+    addAnnotation('annotations2', 'Typography Style', 'right', 50, 30, 25);
+    addAnnotation('annotations2', 'Color Scheme', 'left', 50, 55, 50);
+    addAnnotation('annotations2', 'Architectural Detail', 'right', 50, 80, 75);
 }
 
 // Tab Navigation
