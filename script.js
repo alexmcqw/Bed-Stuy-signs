@@ -67,8 +67,16 @@ function addAnnotation(containerId, label, x, y, arrowX, arrowY, direction = 'au
 function initAnnotations() {
     // Example annotations - you can customize these
     // Format: addAnnotation(containerId, label, labelX%, labelY%, arrowX%, arrowY%)
-    // addAnnotation('annotations1', 'Example Label', 50, 20, 30, 40);
-    // addAnnotation('annotations2', 'Another Label', 60, 30, 50, 50);
+    
+    // Annotations for first image (storefront2.jpg)
+    addAnnotation('annotations1', 'Storefront Sign', 20, 15, 50, 25);
+    addAnnotation('annotations1', 'Window Display', 80, 40, 50, 50);
+    addAnnotation('annotations1', 'Doorway', 30, 70, 50, 85);
+    
+    // Annotations for second image (storefront1.jpeg)
+    addAnnotation('annotations2', 'Typography Style', 25, 20, 50, 30);
+    addAnnotation('annotations2', 'Color Scheme', 75, 45, 50, 55);
+    addAnnotation('annotations2', 'Architectural Detail', 40, 75, 50, 80);
 }
 
 // Tab Navigation
