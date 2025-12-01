@@ -1408,11 +1408,17 @@ async function initComparisonVisualization() {
 
         // Get all column names to find columns
         const headers = parsed.meta.fields || Object.keys(parsed.data[0] || {});
-        const columnAE = headers[30]; // Column AE is the 31st column (0-indexed: 30)
-        const columnBP = headers[67]; // Column BP is the 68th column (0-indexed: 67)
-        const columnBQ = headers[68]; // Column BQ is the 69th column (0-indexed: 68)
+        const columnD = headers[3]; // Column D is the 4th column (0-indexed: 3) - Business name
+        const columnE = headers[4]; // Column E is the 5th column (0-indexed: 4) - Category
+        const columnAE = headers[30]; // Column AE is the 31st column (0-indexed: 30) - Images
+        const columnBM = headers[64]; // Column BM is the 65th column (0-indexed: 64) - Status
+        const columnBP = headers[67]; // Column BP is the 68th column (0-indexed: 67) - Old-school confidence
+        const columnBQ = headers[68]; // Column BQ is the 69th column (0-indexed: 68) - New-school confidence
 
+        console.log('Column D (name):', columnD);
+        console.log('Column E (category):', columnE);
         console.log('Column AE (images):', columnAE);
+        console.log('Column BM (status):', columnBM);
         console.log('Column BP (old-school confidence):', columnBP);
         console.log('Column BQ (new-school confidence):', columnBQ);
 
@@ -1445,11 +1451,19 @@ async function initComparisonVisualization() {
                     }
                 }
                 
+                // Get business details for tooltip
+                const businessName = row[columnD] || 'Unknown';
+                const category = row[columnE] || 'Unknown';
+                const status = row[columnBM] || 'Unknown';
+                
                 return {
                     imageUrl: imageUrl,
                     predictedClass,
                     isOldSchool,
-                    confidence: confidence || 0 // Default to 0 if not found
+                    confidence: confidence || 0, // Default to 0 if not found
+                    businessName: businessName.trim(),
+                    category: category.trim(),
+                    status: status.trim()
                 };
             })
             .filter(item => {
@@ -1485,7 +1499,6 @@ async function initComparisonVisualization() {
             // Old-school image
             if (i < oldSchool.length) {
                 const item = oldSchool[i];
-                const gradientPercent = (item.confidence / 100) * 100;
                 const bgColor = getOldSchoolGradientColor(item.confidence);
                 
                 const imgDiv = document.createElement('div');
@@ -1493,7 +1506,13 @@ async function initComparisonVisualization() {
                 imgDiv.style.backgroundColor = bgColor;
                 imgDiv.innerHTML = `
                     <img src="${item.imageUrl}" alt="Old-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
-                    <div class="confidence-label">${Math.round(item.confidence)}%</div>
+                    <div class="comparison-tooltip">
+                        <div class="tooltip-content">
+                            <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
+                            <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
+                            <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
+                        </div>
+                    </div>
                 `;
                 oldSchoolContainer.appendChild(imgDiv);
             } else {
@@ -1513,7 +1532,13 @@ async function initComparisonVisualization() {
                 imgDiv.style.backgroundColor = bgColor;
                 imgDiv.innerHTML = `
                     <img src="${item.imageUrl}" alt="New-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
-                    <div class="confidence-label">${Math.round(item.confidence)}%</div>
+                    <div class="comparison-tooltip">
+                        <div class="tooltip-content">
+                            <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
+                            <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
+                            <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
+                        </div>
+                    </div>
                 `;
                 newSchoolContainer.appendChild(imgDiv);
             } else {
