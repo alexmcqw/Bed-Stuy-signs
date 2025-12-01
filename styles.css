@@ -818,3 +818,85 @@ body {
     height: auto;
 }
 
+/* Comparison Visualization Styles */
+.comparison-visualization {
+    margin: 2rem 0;
+}
+
+.comparison-loading,
+.comparison-error {
+    padding: 2rem;
+    text-align: center;
+    color: #64748b;
+}
+
+.comparison-container {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.comparison-column {
+    flex: 1;
+    min-width: 0;
+}
+
+.comparison-column h3 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.comparison-images {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.comparison-image-item {
+    position: relative;
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 4px;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.comparison-image-item.empty {
+    min-height: 150px;
+    background: transparent;
+}
+
+.comparison-image-item img {
+    max-width: 100%;
+    max-height: 200px;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    object-fit: contain;
+}
+
+.comparison-image-item .confidence-label {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1e293b;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.comparison-image-item .image-error {
+    color: #64748b;
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 1rem;
+}
+

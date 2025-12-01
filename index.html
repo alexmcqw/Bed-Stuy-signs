@@ -30,6 +30,7 @@
         <main class="main-content">
             <nav class="tabs" role="tablist">
                 <button class="tab-button active" data-tab="intro" role="tab" aria-selected="true">Intro</button>
+                <button class="tab-button" data-tab="comparison" role="tab" aria-selected="false">Old-school v. New-school</button>
                 <button class="tab-button" data-tab="map" role="tab" aria-selected="false">Map</button>
                 <button class="tab-button" data-tab="timeline" role="tab" aria-selected="false">Timeline</button>
                 <button class="tab-button" data-tab="background" role="tab" aria-selected="false">Findings</button>
@@ -70,6 +71,17 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Old-school v. New-school Tab -->
+                <div id="comparison" class="tab-panel" role="tabpanel">
+                    <section class="content-section">
+                        <h2>Old-school v. New-school Typography Comparison</h2>
+                        <p>This visualization displays storefront images ranked by prediction confidence, with old-school typography on the left and new-school typography on the right. The background color gradients reflect confidence levels, transitioning from dark (high confidence) to light (low confidence).</p>
+                        <div id="comparison-visualization" class="comparison-visualization">
+                            <div class="comparison-loading">Loading images...</div>
                         </div>
                     </section>
                 </div>

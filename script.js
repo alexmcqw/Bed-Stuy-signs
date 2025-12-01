@@ -146,6 +146,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 initTimeline();
             } else if (targetTab === 'background') {
                 initRegressionAnalysis();
+            } else if (targetTab === 'comparison') {
+                initComparisonVisualization();
             }
         });
     });
@@ -1384,5 +1386,180 @@ async function initRegressionAnalysis() {
             </div>
         `;
     }
+}
+
+// Old-school v. New-school Comparison Visualization
+async function initComparisonVisualization() {
+    const container = document.getElementById('comparison-visualization');
+    if (!container) return;
+
+    try {
+        const response = await fetch('data.csv');
+        if (!response.ok) {
+            throw new Error('Failed to load CSV data');
+        }
+
+        const csvText = await response.text();
+        const parsed = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: false
+        });
+
+        // Get all column names to find column AE (index 30, 0-indexed)
+        const headers = parsed.meta.fields || Object.keys(parsed.data[0] || {});
+        const columnAE = headers[30]; // Column AE is the 31st column (0-indexed: 30)
+        
+        // Try to find confidence column (common names)
+        const confidenceCol = headers.find(h => 
+            h && (h.toLowerCase().includes('confidence') || 
+                 h.toLowerCase().includes('prediction confidence') ||
+                 h.toLowerCase().includes('confidence score'))
+        ) || headers.find((h, i) => i === 31); // Try column AF as fallback
+
+        console.log('Column AE:', columnAE);
+        console.log('Confidence column:', confidenceCol);
+        console.log('All headers:', headers);
+
+        // Filter and process data
+        const imageData = parsed.data
+            .filter(row => {
+                const imageUrl = row[columnAE] || row['Photo_URL'] || '';
+                const predictedClass = (row['Predicted Class'] || '').trim().replace(/^[01]\s+/, '');
+                return imageUrl && imageUrl.trim() && predictedClass;
+            })
+            .map(row => {
+                const imageUrl = row[columnAE] || row['Photo_URL'] || '';
+                let predictedClass = (row['Predicted Class'] || '').trim().replace(/^[01]\s+/, '');
+                const isOldSchool = predictedClass.toLowerCase().includes('old-school');
+                
+                // Get confidence (try to parse as percentage or decimal)
+                let confidence = 0;
+                if (confidenceCol && row[confidenceCol]) {
+                    const confStr = String(row[confidenceCol]).trim();
+                    // Try parsing as percentage (e.g., "95%") or decimal (e.g., "0.95")
+                    if (confStr.includes('%')) {
+                        confidence = parseFloat(confStr.replace('%', '')) || 0;
+                    } else {
+                        const confNum = parseFloat(confStr);
+                        confidence = confNum > 1 ? confNum : confNum * 100; // Convert decimal to percentage if needed
+                    }
+                }
+                
+                return {
+                    imageUrl: imageUrl.trim(),
+                    predictedClass,
+                    isOldSchool,
+                    confidence: confidence || 50 // Default to 50% if not found
+                };
+            });
+
+        // Separate old-school and new-school
+        const oldSchool = imageData.filter(d => d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
+        const newSchool = imageData.filter(d => !d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
+
+        // Create visualization
+        const maxLength = Math.max(oldSchool.length, newSchool.length);
+        
+        container.innerHTML = `
+            <div class="comparison-container">
+                <div class="comparison-column old-school-column">
+                    <h3>Old-school</h3>
+                    <div class="comparison-images" id="old-school-images"></div>
+                </div>
+                <div class="comparison-column new-school-column">
+                    <h3>New-school</h3>
+                    <div class="comparison-images" id="new-school-images"></div>
+                </div>
+            </div>
+        `;
+
+        const oldSchoolContainer = document.getElementById('old-school-images');
+        const newSchoolContainer = document.getElementById('new-school-images');
+
+        // Render images with gradient backgrounds
+        for (let i = 0; i < maxLength; i++) {
+            // Old-school image
+            if (i < oldSchool.length) {
+                const item = oldSchool[i];
+                const gradientPercent = (item.confidence / 100) * 100;
+                const bgColor = getOldSchoolGradientColor(item.confidence);
+                
+                const imgDiv = document.createElement('div');
+                imgDiv.className = 'comparison-image-item';
+                imgDiv.style.backgroundColor = bgColor;
+                imgDiv.innerHTML = `
+                    <img src="${item.imageUrl}" alt="Old-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
+                    <div class="confidence-label">${Math.round(item.confidence)}%</div>
+                `;
+                oldSchoolContainer.appendChild(imgDiv);
+            } else {
+                // Empty placeholder to maintain alignment
+                const placeholder = document.createElement('div');
+                placeholder.className = 'comparison-image-item empty';
+                oldSchoolContainer.appendChild(placeholder);
+            }
+
+            // New-school image
+            if (i < newSchool.length) {
+                const item = newSchool[i];
+                const bgColor = getNewSchoolGradientColor(item.confidence);
+                
+                const imgDiv = document.createElement('div');
+                imgDiv.className = 'comparison-image-item';
+                imgDiv.style.backgroundColor = bgColor;
+                imgDiv.innerHTML = `
+                    <img src="${item.imageUrl}" alt="New-school storefront" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'image-error\\'>Image unavailable</div>';">
+                    <div class="confidence-label">${Math.round(item.confidence)}%</div>
+                `;
+                newSchoolContainer.appendChild(imgDiv);
+            } else {
+                // Empty placeholder to maintain alignment
+                const placeholder = document.createElement('div');
+                placeholder.className = 'comparison-image-item empty';
+                newSchoolContainer.appendChild(placeholder);
+            }
+        }
+
+    } catch (error) {
+        console.error('Error loading comparison visualization:', error);
+        container.innerHTML = `
+            <div class="comparison-error">
+                <p>Error loading comparison data: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Helper function to get old-school gradient color (dark-brown to lightest brown)
+function getOldSchoolGradientColor(confidence) {
+    // Confidence: 100% = darkest brown, 0% = lightest brown
+    // Dark brown: #5A4A2F (RGB: 90, 74, 47)
+    // Lightest brown: #D2B48C (RGB: 210, 180, 140)
+    const darkR = 90, darkG = 74, darkB = 47;
+    const lightR = 210, lightG = 180, lightB = 140;
+    
+    const ratio = confidence / 100; // 1.0 for 100%, 0.0 for 0%
+    const r = Math.round(darkR + (lightR - darkR) * (1 - ratio));
+    const g = Math.round(darkG + (lightG - darkG) * (1 - ratio));
+    const b = Math.round(darkB + (lightB - darkB) * (1 - ratio));
+    
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Helper function to get new-school gradient color (dark-pink to lightest pink)
+function getNewSchoolGradientColor(confidence) {
+    // Confidence: 100% = darkest pink, 0% = lightest pink
+    // Dark pink: #B71C1C (RGB: 183, 28, 28)
+    // Lightest pink: #F8D7DA (RGB: 248, 215, 218)
+    const darkR = 183, darkG = 28, darkB = 28;
+    const lightR = 248, lightG = 215, lightB = 218;
+    
+    const ratio = confidence / 100; // 1.0 for 100%, 0.0 for 0%
+    const r = Math.round(darkR + (lightR - darkR) * (1 - ratio));
+    const g = Math.round(darkG + (lightG - darkG) * (1 - ratio));
+    const b = Math.round(darkB + (lightB - darkB) * (1 - ratio));
+    
+    return `rgb(${r}, ${g}, ${b})`;
 }
 
