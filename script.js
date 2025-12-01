@@ -1421,10 +1421,13 @@ async function initComparisonVisualization() {
             .filter(row => {
                 const imageUrl = row[columnAE] || row['Photo_URL'] || '';
                 const predictedClass = (row['Predicted Class'] || '').trim().replace(/^[01]\s+/, '');
-                return imageUrl && imageUrl.trim() && predictedClass;
+                // Filter out entries without photos or predicted class
+                const hasValidPhoto = imageUrl && imageUrl.trim() && imageUrl.trim().length > 0;
+                const hasValidClass = predictedClass && predictedClass.length > 0;
+                return hasValidPhoto && hasValidClass;
             })
             .map(row => {
-                const imageUrl = row[columnAE] || row['Photo_URL'] || '';
+                const imageUrl = (row[columnAE] || row['Photo_URL'] || '').trim();
                 let predictedClass = (row['Predicted Class'] || '').trim().replace(/^[01]\s+/, '');
                 const isOldSchool = predictedClass.toLowerCase().includes('old-school');
                 
@@ -1443,13 +1446,16 @@ async function initComparisonVisualization() {
                 }
                 
                 return {
-                    imageUrl: imageUrl.trim(),
+                    imageUrl: imageUrl,
                     predictedClass,
                     isOldSchool,
                     confidence: confidence || 0 // Default to 0 if not found
                 };
             })
-            .filter(item => item.confidence > 0); // Only include items with valid confidence values
+            .filter(item => {
+                // Only include items with valid confidence values AND valid image URLs
+                return item.confidence > 0 && item.imageUrl && item.imageUrl.length > 0;
+            })
 
         // Separate old-school and new-school
         const oldSchool = imageData.filter(d => d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
