@@ -179,6 +179,59 @@ body {
     display: block;
 }
 
+.storefront-image-annotated {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.storefront-image-annotated .image-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.storefront-image-annotated img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
+.annotations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.annotation {
+    position: absolute;
+    pointer-events: auto;
+}
+
+.annotation-label {
+    background-color: rgba(30, 41, 59, 0.9);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+.annotation-arrow {
+    position: absolute;
+    stroke: #1e293b;
+    stroke-width: 2;
+    fill: none;
+    z-index: 5;
+}
+
 .objectives-list {
     list-style: none;
     margin-left: 0;
