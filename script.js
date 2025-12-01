@@ -1,3 +1,76 @@
+// Annotation Helper Function
+function addAnnotation(containerId, label, x, y, arrowX, arrowY, direction = 'auto') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const annotation = document.createElement('div');
+    annotation.className = 'annotation';
+    
+    // Position the label (x, y are percentages of image dimensions)
+    annotation.style.left = `${x}%`;
+    annotation.style.top = `${y}%`;
+    
+    // Create label
+    const labelEl = document.createElement('div');
+    labelEl.className = 'annotation-label';
+    labelEl.textContent = label;
+    annotation.appendChild(labelEl);
+    
+    // Create arrow SVG
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.style.position = 'absolute';
+    svg.style.top = '0';
+    svg.style.left = '0';
+    svg.style.pointerEvents = 'none';
+    
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    arrow.setAttribute('x1', `${arrowX}%`);
+    arrow.setAttribute('y1', `${arrowY}%`);
+    arrow.setAttribute('x2', `${x}%`);
+    arrow.setAttribute('y2', `${y}%`);
+    arrow.setAttribute('stroke', '#1e293b');
+    arrow.setAttribute('stroke-width', '2');
+    arrow.setAttribute('marker-end', 'url(#arrowhead)');
+    
+    // Add arrowhead marker definition if it doesn't exist
+    let defs = svg.querySelector('defs');
+    if (!defs) {
+        defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        svg.appendChild(defs);
+    }
+    
+    let marker = svg.querySelector('#arrowhead');
+    if (!marker) {
+        marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+        marker.setAttribute('id', 'arrowhead');
+        marker.setAttribute('markerWidth', '10');
+        marker.setAttribute('markerHeight', '10');
+        marker.setAttribute('refX', '9');
+        marker.setAttribute('refY', '3');
+        marker.setAttribute('orient', 'auto');
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', '0 0, 10 3, 0 6');
+        polygon.setAttribute('fill', '#1e293b');
+        marker.appendChild(polygon);
+        defs.appendChild(marker);
+    }
+    
+    svg.appendChild(arrow);
+    annotation.appendChild(svg);
+    
+    container.appendChild(annotation);
+}
+
+// Initialize annotations when page loads
+function initAnnotations() {
+    // Example annotations - you can customize these
+    // Format: addAnnotation(containerId, label, labelX%, labelY%, arrowX%, arrowY%)
+    // addAnnotation('annotations1', 'Example Label', 50, 20, 30, 40);
+    // addAnnotation('annotations2', 'Another Label', 60, 30, 50, 50);
+}
+
 // Tab Navigation
 document.addEventListener('DOMContentLoaded', function() {
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -37,6 +110,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize charts
     initRevenueChart();
+    
+    // Initialize annotations
+    initAnnotations();
     
     // Initialize map if map tab is active by default
     const activeTab = document.querySelector('.tab-button.active');
