@@ -3,6 +3,37 @@ function addAnnotation(containerId, label, x, y, arrowX, arrowY, direction = 'au
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    // Ensure shared SVG defs exists in container (create once per container)
+    let sharedSvg = container.querySelector('svg.annotation-defs');
+    if (!sharedSvg) {
+        sharedSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        sharedSvg.className = 'annotation-defs';
+        sharedSvg.style.position = 'absolute';
+        sharedSvg.style.top = '0';
+        sharedSvg.style.left = '0';
+        sharedSvg.style.width = '100%';
+        sharedSvg.style.height = '100%';
+        sharedSvg.style.pointerEvents = 'none';
+        sharedSvg.style.zIndex = '1';
+        
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+        const markerId = `arrowhead-${containerId}`;
+        marker.setAttribute('id', markerId);
+        marker.setAttribute('markerWidth', '10');
+        marker.setAttribute('markerHeight', '10');
+        marker.setAttribute('refX', '9');
+        marker.setAttribute('refY', '3');
+        marker.setAttribute('orient', 'auto');
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', '0 0, 10 3, 0 6');
+        polygon.setAttribute('fill', '#1e293b');
+        marker.appendChild(polygon);
+        defs.appendChild(marker);
+        sharedSvg.appendChild(defs);
+        container.appendChild(sharedSvg);
+    }
+
     const annotation = document.createElement('div');
     annotation.className = 'annotation';
     
@@ -24,7 +55,9 @@ function addAnnotation(containerId, label, x, y, arrowX, arrowY, direction = 'au
     svg.style.top = '0';
     svg.style.left = '0';
     svg.style.pointerEvents = 'none';
+    svg.style.zIndex = '2';
     
+    const markerId = `arrowhead-${containerId}`;
     const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     arrow.setAttribute('x1', `${arrowX}%`);
     arrow.setAttribute('y1', `${arrowY}%`);
@@ -32,30 +65,7 @@ function addAnnotation(containerId, label, x, y, arrowX, arrowY, direction = 'au
     arrow.setAttribute('y2', `${y}%`);
     arrow.setAttribute('stroke', '#1e293b');
     arrow.setAttribute('stroke-width', '2');
-    arrow.setAttribute('marker-end', 'url(#arrowhead)');
-    
-    // Add arrowhead marker definition if it doesn't exist
-    let defs = svg.querySelector('defs');
-    if (!defs) {
-        defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        svg.appendChild(defs);
-    }
-    
-    let marker = svg.querySelector('#arrowhead');
-    if (!marker) {
-        marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-        marker.setAttribute('id', 'arrowhead');
-        marker.setAttribute('markerWidth', '10');
-        marker.setAttribute('markerHeight', '10');
-        marker.setAttribute('refX', '9');
-        marker.setAttribute('refY', '3');
-        marker.setAttribute('orient', 'auto');
-        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-        polygon.setAttribute('points', '0 0, 10 3, 0 6');
-        polygon.setAttribute('fill', '#1e293b');
-        marker.appendChild(polygon);
-        defs.appendChild(marker);
-    }
+    arrow.setAttribute('marker-end', `url(#${markerId})`);
     
     svg.appendChild(arrow);
     annotation.appendChild(svg);
