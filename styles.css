@@ -883,6 +883,42 @@ body {
     aspect-ratio: 1;
 }
 
+/* Progressive sizing: every 100 items get smaller */
+.comparison-image-item.size-normal {
+    min-height: 80px;
+}
+
+.comparison-image-item.size-small {
+    min-height: 60px;
+    padding: 0.2rem;
+}
+
+.comparison-image-item.size-smaller {
+    min-height: 45px;
+    padding: 0.15rem;
+}
+
+.comparison-image-item.size-smallest {
+    min-height: 35px;
+    padding: 0.1rem;
+}
+
+/* Adjust grid for smaller sizes */
+.confidence-level-grid:has(.size-small) {
+    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+    gap: 0.4rem;
+}
+
+.confidence-level-grid:has(.size-smaller) {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 0.3rem;
+}
+
+.confidence-level-grid:has(.size-smallest) {
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 0.25rem;
+}
+
 .comparison-image-item.empty {
     min-height: 120px;
     background: transparent;

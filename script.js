@@ -1510,6 +1510,19 @@ async function initComparisonVisualization() {
         const oldSchoolContainer = document.getElementById('old-school-images');
         const newSchoolContainer = document.getElementById('new-school-images');
 
+        // Track total items processed for progressive sizing
+        let oldSchoolItemCount = 0;
+        let newSchoolItemCount = 0;
+
+        // Function to get size class based on item count
+        const getSizeClass = (itemCount) => {
+            const hundred = Math.floor(itemCount / 100);
+            if (hundred === 0) return 'size-normal';
+            if (hundred === 1) return 'size-small';
+            if (hundred === 2) return 'size-smaller';
+            return 'size-smallest';
+        };
+
         // Render each confidence level as a block
         allConfidenceLevels.forEach(confidenceLevel => {
             const oldSchoolItems = oldSchoolGroups[confidenceLevel] || [];
@@ -1543,7 +1556,8 @@ async function initComparisonVisualization() {
                 oldSchoolItems.forEach(item => {
                     const bgColor = getOldSchoolGradientColor(item.confidence);
                     const imgDiv = document.createElement('div');
-                    imgDiv.className = 'comparison-image-item';
+                    const sizeClass = getSizeClass(oldSchoolItemCount);
+                    imgDiv.className = `comparison-image-item ${sizeClass}`;
                     imgDiv.style.backgroundColor = bgColor;
                     
                     // Add border for "new" status, similar to map tab
@@ -1551,6 +1565,8 @@ async function initComparisonVisualization() {
                     if (statusLower === 'new') {
                         imgDiv.style.border = '2px solid #5A4A2F'; // Darker brown border for new old-school
                     }
+                    
+                    oldSchoolItemCount++;
                     
                     const img = document.createElement('img');
                     img.src = item.imageUrl;
@@ -1586,7 +1602,8 @@ async function initComparisonVisualization() {
                 newSchoolItems.forEach(item => {
                     const bgColor = getNewSchoolGradientColor(item.confidence);
                     const imgDiv = document.createElement('div');
-                    imgDiv.className = 'comparison-image-item';
+                    const sizeClass = getSizeClass(newSchoolItemCount);
+                    imgDiv.className = `comparison-image-item ${sizeClass}`;
                     imgDiv.style.backgroundColor = bgColor;
                     
                     // Add border for "new" status, similar to map tab
@@ -1594,6 +1611,8 @@ async function initComparisonVisualization() {
                     if (statusLower === 'new') {
                         imgDiv.style.border = '2px solid #B71C1C'; // Darker pink border for new new-school
                     }
+                    
+                    newSchoolItemCount++;
                     
                     const img = document.createElement('img');
                     img.src = item.imageUrl;
