@@ -1545,6 +1545,13 @@ async function initComparisonVisualization() {
                     const imgDiv = document.createElement('div');
                     imgDiv.className = 'comparison-image-item';
                     imgDiv.style.backgroundColor = bgColor;
+                    
+                    // Add border for "new" status, similar to map tab
+                    const statusLower = (item.status || '').toLowerCase();
+                    if (statusLower === 'new') {
+                        imgDiv.style.border = '2px solid #5A4A2F'; // Darker brown border for new old-school
+                    }
+                    
                     const img = document.createElement('img');
                     img.src = item.imageUrl;
                     img.alt = 'Old-school storefront';
@@ -1581,6 +1588,13 @@ async function initComparisonVisualization() {
                     const imgDiv = document.createElement('div');
                     imgDiv.className = 'comparison-image-item';
                     imgDiv.style.backgroundColor = bgColor;
+                    
+                    // Add border for "new" status, similar to map tab
+                    const statusLower = (item.status || '').toLowerCase();
+                    if (statusLower === 'new') {
+                        imgDiv.style.border = '2px solid #B71C1C'; // Darker pink border for new new-school
+                    }
+                    
                     const img = document.createElement('img');
                     img.src = item.imageUrl;
                     img.alt = 'New-school storefront';
