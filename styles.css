@@ -973,6 +973,22 @@ body {
     min-width: 200px;
 }
 
+.tooltip-image {
+    margin-bottom: 0.75rem;
+    text-align: center;
+}
+
+.tooltip-image img {
+    max-width: 200px;
+    max-height: 200px;
+    width: auto;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    display: block;
+    margin: 0 auto;
+}
+
 .tooltip-content::after {
     content: '';
     position: absolute;

@@ -1580,8 +1580,15 @@ async function initComparisonVisualization() {
                     
                     const tooltip = document.createElement('div');
                     tooltip.className = 'comparison-tooltip';
+                    
+                    // Add larger thumbnail to tooltip if item is smaller than normal
+                    const tooltipImage = sizeClass !== 'size-normal' 
+                        ? `<div class="tooltip-image"><img src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`
+                        : '';
+                    
                     tooltip.innerHTML = `
                         <div class="tooltip-content">
+                            ${tooltipImage}
                             <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
                             <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
                             <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
@@ -1626,8 +1633,15 @@ async function initComparisonVisualization() {
                     
                     const tooltip = document.createElement('div');
                     tooltip.className = 'comparison-tooltip';
+                    
+                    // Add larger thumbnail to tooltip if item is smaller than normal
+                    const tooltipImage = sizeClass !== 'size-normal' 
+                        ? `<div class="tooltip-image"><img src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`
+                        : '';
+                    
                     tooltip.innerHTML = `
                         <div class="tooltip-content">
+                            ${tooltipImage}
                             <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
                             <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
                             <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
