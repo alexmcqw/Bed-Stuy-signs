@@ -1666,7 +1666,7 @@ async function initComparisonVisualization() {
                     
                     // Add larger thumbnail to tooltip if item is smaller than normal
                     const tooltipImage = sizeClass !== 'size-normal' 
-                        ? `<div class="tooltip-image"><img src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`
+                        ? `<div class="tooltip-image"><img data-src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`
                         : '';
                     
                     tooltip.innerHTML = `
@@ -1678,6 +1678,19 @@ async function initComparisonVisualization() {
                         </div>
                     `;
                     imgDiv.appendChild(tooltip);
+                    
+                    // Lazy load tooltip images when tooltip is shown
+                    if (tooltipImage) {
+                        const tooltipImg = tooltip.querySelector('img[data-src]');
+                        if (tooltipImg) {
+                            imgDiv.addEventListener('mouseenter', function() {
+                                if (tooltipImg.getAttribute('data-src') && !tooltipImg.src) {
+                                    tooltipImg.src = tooltipImg.getAttribute('data-src');
+                                }
+                            }, { once: true });
+                        }
+                    }
+                    
                     gridDiv.appendChild(imgDiv);
                 });
                 
