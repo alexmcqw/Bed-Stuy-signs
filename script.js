@@ -375,6 +375,9 @@ function createMarkers(rows) {
     let newSchoolCount = 0;
     let totalCount = 0;
 
+    // First, group rows by coordinates
+    const coordinateGroups = new Map();
+
     rows.forEach(row => {
         try {
             // Get coordinates
@@ -392,76 +395,143 @@ function createMarkers(rows) {
                 return; // Skip markers without images
             }
 
-            // Get prediction data
-            let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
+            // Create a key from the coordinates (rounded to 6 decimal places)
+            const coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
             
-            // Convert to string and trim
-            predictedClass = String(predictedClass || '').trim();
-            
-            // Remove leading numeral (0 or 1) and space from Predicted Class
-            if (predictedClass) {
-                predictedClass = predictedClass.replace(/^[01]\s+/, '');  // Match one or more spaces after 0/1
+            if (!coordinateGroups.has(coordKey)) {
+                coordinateGroups.set(coordKey, {
+                    lat: lat,
+                    lng: lng,
+                    rows: []
+                });
             }
-            
-            const status = row['Status_simplified'] || '';
-            const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 'Unknown';
-            const address = row['LiveXYZSeptember132025_XYTableToPoint_address'] || '';
-            const postcode = row['LiveXYZSeptember132025_XYTableToPoint_postcode'] || '';
-            const category = row['LiveXYZSeptember132025_XYTableToPoint_subcategoriesPrimary_name'] || 
-                            row['LiveXYZSeptember132025_XYTableToPoint_categoriesPrimary_name'] || '';
+            coordinateGroups.get(coordKey).rows.push(row);
+        } catch (error) {
+            console.error('Error processing row:', row, error);
+        }
+    });
 
-            // Determine if Old-school or New-school
-            const isOldSchool = predictedClass.includes('Old-school');
-
-            // Create custom icon based on typography class
-            const iconColor = isOldSchool ? '#8B6F47' : '#E91E63'; // Brown for old-school, pink for new-school
+    // Now create markers for each coordinate group
+    coordinateGroups.forEach((group, coordKey) => {
+        try {
+            const { lat, lng, rows: rowsAtLocation } = group;
+            const locationCount = rowsAtLocation.length;
             
-            // Determine border color based on status
-            let borderColor = 'white'; // Default
-            if (status && status.toLowerCase() === 'closed') {
-                // Remove white border for closed (use same color as background)
-                borderColor = iconColor;
-            } else if (status && status.toLowerCase() === 'new') {
-                // Use darker version of pin color for new status
-                borderColor = isOldSchool ? '#5A4A2F' : '#B71C1C'; // Darker brown or darker pink
-            }
+            // Calculate marker size based on count
+            // Base size: 10px, add 2px for each additional row (max 20px)
+            const baseSize = 10;
+            const sizeIncrement = 2;
+            const maxSize = 20;
+            const markerSize = Math.min(baseSize + (locationCount - 1) * sizeIncrement, maxSize);
+            const iconAnchor = markerSize / 2;
+
+            // Process all rows at this location to determine marker appearance
+            let oldSchoolCountAtLocation = 0;
+            let newSchoolCountAtLocation = 0;
+            const businesses = [];
+
+            rowsAtLocation.forEach(row => {
+                // Get prediction data
+                let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
+                
+                // Convert to string and trim
+                predictedClass = String(predictedClass || '').trim();
+                
+                // Remove leading numeral (0 or 1) and space from Predicted Class
+                if (predictedClass) {
+                    predictedClass = predictedClass.replace(/^[01]\s+/, '');
+                }
+                
+                const status = row['Status_simplified'] || '';
+                const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 'Unknown';
+                const address = row['LiveXYZSeptember132025_XYTableToPoint_address'] || '';
+                const postcode = row['LiveXYZSeptember132025_XYTableToPoint_postcode'] || '';
+                const category = row['LiveXYZSeptember132025_XYTableToPoint_subcategoriesPrimary_name'] || 
+                                row['LiveXYZSeptember132025_XYTableToPoint_categoriesPrimary_name'] || '';
+                const photoUrl = row['Photo_URL'] || '';
+
+                // Determine if Old-school or New-school
+                const isOldSchool = predictedClass.includes('Old-school');
+                if (isOldSchool) {
+                    oldSchoolCountAtLocation++;
+                } else {
+                    newSchoolCountAtLocation++;
+                }
+
+                businesses.push({
+                    name,
+                    address,
+                    postcode,
+                    category,
+                    status,
+                    predictedClass,
+                    photoUrl,
+                    isOldSchool
+                });
+            });
+
+            // Determine marker color based on majority
+            // If tied or mixed, use a gradient or default to the first one
+            const isOldSchoolDominant = oldSchoolCountAtLocation >= newSchoolCountAtLocation;
+            const iconColor = isOldSchoolDominant ? '#8B6F47' : '#E91E63'; // Brown for old-school, pink for new-school
+            
+            // Use white border for markers with multiple businesses to make them stand out
+            const borderColor = locationCount > 1 ? 'white' : iconColor;
             
             const icon = L.divIcon({
                 className: 'custom-marker',
-                html: `<div style="background-color: ${iconColor}; width: 10px; height: 10px; border-radius: 50%; border: 2px solid ${borderColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-                iconSize: [10, 10],
-                iconAnchor: [5, 5]
+                html: `<div style="background-color: ${iconColor}; width: ${markerSize}px; height: ${markerSize}px; border-radius: 50%; border: 2px solid ${borderColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                iconSize: [markerSize, markerSize],
+                iconAnchor: [iconAnchor, iconAnchor]
             });
 
             // Create marker
             const marker = L.marker([lat, lng], { icon: icon });
 
-            // Create popup content
+            // Create popup content showing all businesses at this location
             let popupContent = '<div class="popup-content">';
-            popupContent += `<h3>${name}</h3>`;
             
-            // Add storefront image thumbnail
-            if (photoUrl) {
-                popupContent += `<div class="popup-image-container"><img src="${photoUrl}" alt="${name}" class="popup-thumbnail" onerror="this.style.display='none'"></div>`;
+            if (locationCount > 1) {
+                popupContent += `<h3>${locationCount} Businesses at This Location</h3>`;
+            } else {
+                popupContent += `<h3>${businesses[0].name}</h3>`;
             }
             
-            if (address) {
-                popupContent += `<p class="address"><strong>Address:</strong> ${address}`;
-                if (postcode) {
-                    popupContent += `, ${postcode}`;
+            // Show address from first business (they should all be the same)
+            if (businesses[0].address) {
+                popupContent += `<p class="address"><strong>Address:</strong> ${businesses[0].address}`;
+                if (businesses[0].postcode) {
+                    popupContent += `, ${businesses[0].postcode}`;
                 }
                 popupContent += '</p>';
             }
 
-            if (category) {
-                popupContent += `<p><strong>Category:</strong> ${category}</p>`;
-            }
+            // List all businesses
+            businesses.forEach((business, idx) => {
+                if (locationCount > 1) {
+                    popupContent += `<div style="margin-top: ${idx > 0 ? '15px' : '0'}; padding-top: ${idx > 0 ? '15px' : '0'}; border-top: ${idx > 0 ? '1px solid #e2e8f0' : 'none'};">`;
+                    popupContent += `<h4 style="margin: 0 0 8px 0;">${business.name}</h4>`;
+                }
+                
+                // Add storefront image thumbnail
+                if (business.photoUrl) {
+                    popupContent += `<div class="popup-image-container"><img src="${business.photoUrl}" alt="${business.name}" class="popup-thumbnail" onerror="this.style.display='none'"></div>`;
+                }
 
-            if (status) {
-                popupContent += `<p><strong>Status:</strong> ${status}</p>`;
-            }
+                if (business.category) {
+                    popupContent += `<p><strong>Category:</strong> ${business.category}</p>`;
+                }
 
-            popupContent += `<p><strong>Predicted Class:</strong> ${predictedClass || 'N/A'}</p>`;
+                if (business.status) {
+                    popupContent += `<p><strong>Status:</strong> ${business.status}</p>`;
+                }
+
+                popupContent += `<p><strong>Predicted Class:</strong> ${business.predictedClass || 'N/A'}</p>`;
+                
+                if (locationCount > 1) {
+                    popupContent += '</div>';
+                }
+            });
 
             popupContent += '</div>';
 
@@ -541,15 +611,12 @@ function createMarkers(rows) {
 
             markers.addLayer(marker);
 
-            // Update counts
-            totalCount++;
-            if (isOldSchool) {
-                oldSchoolCount++;
-            } else {
-                newSchoolCount++;
-            }
+            // Update counts (count all businesses, not just markers)
+            totalCount += locationCount;
+            oldSchoolCount += oldSchoolCountAtLocation;
+            newSchoolCount += newSchoolCountAtLocation;
         } catch (error) {
-            console.error('Error creating marker for row:', row, error);
+            console.error('Error creating marker for location:', coordKey, error);
         }
     });
 
