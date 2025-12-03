@@ -470,17 +470,73 @@ function createMarkers(rows) {
                 });
             });
 
-            // Determine marker color based on majority
-            // If tied or mixed, use a gradient or default to the first one
-            const isOldSchoolDominant = oldSchoolCountAtLocation >= newSchoolCountAtLocation;
-            const iconColor = isOldSchoolDominant ? '#8B6F47' : '#E91E63'; // Brown for old-school, pink for new-school
+            // Calculate proportions for pie chart
+            const totalCountAtLocation = oldSchoolCountAtLocation + newSchoolCountAtLocation;
+            const oldSchoolProportion = oldSchoolCountAtLocation / totalCountAtLocation;
+            const newSchoolProportion = newSchoolCountAtLocation / totalCountAtLocation;
             
-            // Use white border for markers with multiple businesses to make them stand out
-            const borderColor = locationCount > 1 ? 'white' : iconColor;
+            // Colors
+            const oldSchoolColor = '#8B6F47'; // Brown
+            const newSchoolColor = '#E91E63'; // Pink
+            const borderColor = 'white';
+            const center = markerSize / 2;
+            const radius = (markerSize - 4) / 2; // Account for border
+            
+            // Create SVG pie chart
+            let svgPaths = '';
+            
+            if (oldSchoolCountAtLocation === 0) {
+                // All new-school
+                svgPaths = `<circle cx="${center}" cy="${center}" r="${radius}" fill="${newSchoolColor}"/>`;
+            } else if (newSchoolCountAtLocation === 0) {
+                // All old-school
+                svgPaths = `<circle cx="${center}" cy="${center}" r="${radius}" fill="${oldSchoolColor}"/>`;
+            } else {
+                // Mixed: create pie slices
+                // Start from top (270 degrees in SVG, but we'll use 0 degrees = right, then go clockwise)
+                // SVG angles: 0 = right, 90 = bottom, 180 = left, 270 = top
+                // We'll start from top (-90 degrees in standard math, which is 270 in SVG)
+                const startAngle = -90; // Start from top
+                const oldSchoolAngle = oldSchoolProportion * 360;
+                const newSchoolAngle = newSchoolProportion * 360;
+                
+                // Convert to radians for calculations
+                const toRad = (deg) => (deg * Math.PI) / 180;
+                
+                // Old-school slice (starts from top, goes clockwise)
+                const oldSchoolStartAngle = startAngle;
+                const oldSchoolEndAngle = startAngle + oldSchoolAngle;
+                
+                const oldSchoolStartX = center + radius * Math.cos(toRad(oldSchoolStartAngle));
+                const oldSchoolStartY = center + radius * Math.sin(toRad(oldSchoolStartAngle));
+                const oldSchoolEndX = center + radius * Math.cos(toRad(oldSchoolEndAngle));
+                const oldSchoolEndY = center + radius * Math.sin(toRad(oldSchoolEndAngle));
+                
+                // Large arc flag: 1 if angle > 180, 0 otherwise
+                const oldSchoolLargeArc = oldSchoolAngle > 180 ? 1 : 0;
+                
+                svgPaths += `<path d="M ${center} ${center} L ${oldSchoolStartX} ${oldSchoolStartY} A ${radius} ${radius} 0 ${oldSchoolLargeArc} 1 ${oldSchoolEndX} ${oldSchoolEndY} Z" fill="${oldSchoolColor}"/>`;
+                
+                // New-school slice (continues from old-school end)
+                const newSchoolStartAngle = oldSchoolEndAngle;
+                const newSchoolEndAngle = startAngle + 360; // Full circle back to start
+                
+                const newSchoolStartX = center + radius * Math.cos(toRad(newSchoolStartAngle));
+                const newSchoolStartY = center + radius * Math.sin(toRad(newSchoolStartAngle));
+                const newSchoolEndX = center + radius * Math.cos(toRad(newSchoolEndAngle));
+                const newSchoolEndY = center + radius * Math.sin(toRad(newSchoolEndAngle));
+                
+                const newSchoolLargeArc = newSchoolAngle > 180 ? 1 : 0;
+                
+                svgPaths += `<path d="M ${center} ${center} L ${newSchoolStartX} ${newSchoolStartY} A ${radius} ${radius} 0 ${newSchoolLargeArc} 1 ${newSchoolEndX} ${newSchoolEndY} Z" fill="${newSchoolColor}"/>`;
+            }
             
             const icon = L.divIcon({
                 className: 'custom-marker',
-                html: `<div style="background-color: ${iconColor}; width: ${markerSize}px; height: ${markerSize}px; border-radius: 50%; border: 2px solid ${borderColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                html: `<svg width="${markerSize}" height="${markerSize}" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                    ${svgPaths}
+                    <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${borderColor}" stroke-width="2"/>
+                </svg>`,
                 iconSize: [markerSize, markerSize],
                 iconAnchor: [iconAnchor, iconAnchor]
             });
