@@ -1569,14 +1569,29 @@ async function initComparisonVisualization() {
                     oldSchoolItemCount++;
                     
                     const img = document.createElement('img');
-                    img.src = item.imageUrl;
+                    img.setAttribute('data-src', item.imageUrl); // Use data-src for lazy loading
                     img.alt = 'Old-school storefront';
-                    img.loading = 'lazy'; // Lazy load images
+                    img.loading = 'lazy';
                     img.onerror = function() {
                         this.style.display = 'none';
                         this.parentElement.innerHTML = '<div class="image-error">Image unavailable</div>';
                     };
+                    // Set src when image is near viewport (Intersection Observer will handle this)
                     imgDiv.appendChild(img);
+                    
+                    // Use Intersection Observer for better lazy loading control
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const img = entry.target;
+                                img.src = img.getAttribute('data-src');
+                                observer.unobserve(img);
+                            }
+                        });
+                    }, {
+                        rootMargin: '50px' // Start loading 50px before entering viewport
+                    });
+                    observer.observe(img);
                     
                     const tooltip = document.createElement('div');
                     tooltip.className = 'comparison-tooltip';
@@ -1622,14 +1637,29 @@ async function initComparisonVisualization() {
                     newSchoolItemCount++;
                     
                     const img = document.createElement('img');
-                    img.src = item.imageUrl;
+                    img.setAttribute('data-src', item.imageUrl); // Use data-src for lazy loading
                     img.alt = 'New-school storefront';
-                    img.loading = 'lazy'; // Lazy load images
+                    img.loading = 'lazy';
                     img.onerror = function() {
                         this.style.display = 'none';
                         this.parentElement.innerHTML = '<div class="image-error">Image unavailable</div>';
                     };
+                    // Set src when image is near viewport (Intersection Observer will handle this)
                     imgDiv.appendChild(img);
+                    
+                    // Use Intersection Observer for better lazy loading control
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const img = entry.target;
+                                img.src = img.getAttribute('data-src');
+                                observer.unobserve(img);
+                            }
+                        });
+                    }, {
+                        rootMargin: '50px' // Start loading 50px before entering viewport
+                    });
+                    observer.observe(img);
                     
                     const tooltip = document.createElement('div');
                     tooltip.className = 'comparison-tooltip';
