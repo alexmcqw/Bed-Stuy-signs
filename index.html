@@ -9,6 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12/dist/d3-sankey.min.js"></script>
     <script type="module">
         import * as Plot from "https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6/+esm";
         window.Plot = Plot;
@@ -196,6 +198,14 @@
                             <li><strong>Median businesses per shared location:</strong> 2</li>
                         </ul>
                         <p>These statistics indicate significant business turnover, with the majority of photographed storefronts occupying locations that have hosted multiple businesses over time. This pattern suggests active commercial real estate churn, which may correlate with neighborhood transformation and gentrification processes.</p>
+                    </section>
+
+                    <section class="content-section">
+                        <h2>Turnover Flow</h2>
+                        <p>This Sankey diagram visualizes business turnover at shared locations, showing how businesses flow through time periods. Each row on the left represents a unique location (shared lat/long), colored by the dominant typography style (old-school in brown, new-school in pink). Each column moving right represents a time period based on placeCreationDate.</p>
+                        <div id="sankey-diagram" style="width: 100%; min-height: 600px; margin-top: 2rem;">
+                            <div style="padding: 2rem; text-align: center; color: #64748b;">Loading turnover flow diagram...</div>
+                        </div>
                     </section>
                 </div>
 
