@@ -478,9 +478,34 @@ function createMarkers(rows) {
             // Colors
             const oldSchoolColor = '#8B6F47'; // Brown
             const newSchoolColor = '#E91E63'; // Pink
-            const borderColor = 'white';
             const center = markerSize / 2;
-            const radius = (markerSize - 4) / 2; // Account for border
+            
+            // Determine border based on location count and status
+            let borderColor = 'none';
+            let borderWidth = 0;
+            
+            if (locationCount === 1) {
+                // Single location: check status
+                const placeStatus = rowsAtLocation[0]['LiveXYZSeptember132025_XYTableToPoint_placeStatus'] || 
+                                   rowsAtLocation[0]['Status_simplified'] || '';
+                const statusLower = placeStatus.toLowerCase();
+                
+                if (statusLower === 'operating') {
+                    borderColor = 'white';
+                    borderWidth = 2;
+                } else if (statusLower === 'permanently closed') {
+                    // No border for permanently closed
+                    borderColor = 'none';
+                    borderWidth = 0;
+                }
+                // Other statuses: no border (default)
+            }
+            // Multiple locations: no border (locationCount > 1)
+            
+            // Calculate radius: account for border if present
+            const radius = borderWidth > 0 
+                ? (markerSize - borderWidth * 2) / 2 
+                : (markerSize - 2) / 2; // Small margin even without border
             
             // Create SVG pie chart
             let svgPaths = '';
@@ -531,11 +556,16 @@ function createMarkers(rows) {
                 svgPaths += `<path d="M ${center} ${center} L ${newSchoolStartX} ${newSchoolStartY} A ${radius} ${radius} 0 ${newSchoolLargeArc} 1 ${newSchoolEndX} ${newSchoolEndY} Z" fill="${newSchoolColor}"/>`;
             }
             
+            // Only add border circle if borderWidth > 0
+            const borderCircle = borderWidth > 0 
+                ? `<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${borderColor}" stroke-width="${borderWidth}"/>`
+                : '';
+            
             const icon = L.divIcon({
                 className: 'custom-marker',
                 html: `<svg width="${markerSize}" height="${markerSize}" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
                     ${svgPaths}
-                    <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${borderColor}" stroke-width="2"/>
+                    ${borderCircle}
                 </svg>`,
                 iconSize: [markerSize, markerSize],
                 iconAnchor: [iconAnchor, iconAnchor]
