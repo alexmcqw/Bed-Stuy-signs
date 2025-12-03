@@ -488,6 +488,29 @@ body {
     object-fit: cover;
 }
 
+.popup-businesses-horizontal {
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    margin-top: 0.75rem;
+    overflow-x: auto;
+}
+
+.popup-business-item {
+    flex: 0 0 auto;
+    min-width: 200px;
+    max-width: 250px;
+}
+
+.popup-business-item .popup-image-container {
+    margin: 0.5rem 0;
+}
+
+.popup-business-item .popup-thumbnail {
+    max-width: 180px;
+    max-height: 120px;
+}
+
 .legend-color.dark-slate {
     background-color: #334155;
 }

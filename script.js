@@ -449,6 +449,7 @@ function createMarkers(rows) {
                 const category = row['LiveXYZSeptember132025_XYTableToPoint_subcategoriesPrimary_name'] || 
                                 row['LiveXYZSeptember132025_XYTableToPoint_categoriesPrimary_name'] || '';
                 const photoUrl = row['Photo_URL'] || '';
+                const placeCreationDate = row['placeCreationDate_short'] || row['placeCreationDate'] || '';
 
                 // Determine if Old-school or New-school
                 const isOldSchool = predictedClass.includes('Old-school');
@@ -466,8 +467,16 @@ function createMarkers(rows) {
                     status,
                     predictedClass,
                     photoUrl,
-                    isOldSchool
+                    isOldSchool,
+                    placeCreationDate
                 });
+            });
+
+            // Sort businesses by placeCreationDate (oldest to newest, left to right)
+            businesses.sort((a, b) => {
+                const dateA = a.placeCreationDate ? new Date(a.placeCreationDate) : new Date(0);
+                const dateB = b.placeCreationDate ? new Date(b.placeCreationDate) : new Date(0);
+                return dateA - dateB; // Ascending order (oldest first)
             });
 
             // Calculate proportions for pie chart
@@ -572,11 +581,34 @@ function createMarkers(rows) {
             }
 
             // List all businesses
-            businesses.forEach((business, idx) => {
-                if (locationCount > 1) {
-                    popupContent += `<div style="margin-top: ${idx > 0 ? '15px' : '0'}; padding-top: ${idx > 0 ? '15px' : '0'}; border-top: ${idx > 0 ? '1px solid #e2e8f0' : 'none'};">`;
-                    popupContent += `<h4 style="margin: 0 0 8px 0;">${business.name}</h4>`;
-                }
+            if (locationCount > 1) {
+                // Horizontal layout for multiple businesses
+                popupContent += '<div class="popup-businesses-horizontal">';
+                businesses.forEach((business, idx) => {
+                    popupContent += `<div class="popup-business-item" style="margin-left: ${idx > 0 ? '10px' : '0'}; padding-left: ${idx > 0 ? '10px' : '0'}; border-left: ${idx > 0 ? '1px solid #e2e8f0' : 'none'};">
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.9rem;">${business.name}</h4>`;
+                    
+                    // Add storefront image thumbnail
+                    if (business.photoUrl) {
+                        popupContent += `<div class="popup-image-container"><img src="${business.photoUrl}" alt="${business.name}" class="popup-thumbnail" onerror="this.style.display='none'"></div>`;
+                    }
+
+                    if (business.category) {
+                        popupContent += `<p style="font-size: 0.85rem; margin: 4px 0;"><strong>Category:</strong> ${business.category}</p>`;
+                    }
+
+                    if (business.status) {
+                        popupContent += `<p style="font-size: 0.85rem; margin: 4px 0;"><strong>Status:</strong> ${business.status}</p>`;
+                    }
+
+                    popupContent += `<p style="font-size: 0.85rem; margin: 4px 0;"><strong>Predicted Class:</strong> ${business.predictedClass || 'N/A'}</p>`;
+                    
+                    popupContent += '</div>';
+                });
+                popupContent += '</div>';
+            } else {
+                // Single business - vertical layout
+                const business = businesses[0];
                 
                 // Add storefront image thumbnail
                 if (business.photoUrl) {
@@ -592,15 +624,13 @@ function createMarkers(rows) {
                 }
 
                 popupContent += `<p><strong>Predicted Class:</strong> ${business.predictedClass || 'N/A'}</p>`;
-                
-                if (locationCount > 1) {
-                    popupContent += '</div>';
-                }
-            });
+            }
 
             popupContent += '</div>';
 
             // Bind popup with auto-positioning options
+            // Use larger maxWidth for multiple businesses to accommodate horizontal layout
+            const popupMaxWidth = locationCount > 1 ? 600 : 300;
             const popup = L.popup({
                 autoPan: true,
                 autoPanPadding: [50, 50],
@@ -608,7 +638,7 @@ function createMarkers(rows) {
                 autoPanPaddingBottomRight: [50, 50],
                 closeOnClick: false,
                 autoClose: true,  // Only allow one popup at a time
-                maxWidth: 300
+                maxWidth: popupMaxWidth
             }).setContent(popupContent);
 
             marker.bindPopup(popup);
