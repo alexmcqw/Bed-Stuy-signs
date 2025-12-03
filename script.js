@@ -480,32 +480,11 @@ function createMarkers(rows) {
             const newSchoolColor = '#E91E63'; // Pink
             const center = markerSize / 2;
             
-            // Determine border based on location count and status
-            let borderColor = 'none';
-            let borderWidth = 0;
+            // No borders on any markers
+            const borderWidth = 0;
             
-            if (locationCount === 1) {
-                // Single location: check status
-                const placeStatus = rowsAtLocation[0]['LiveXYZSeptember132025_XYTableToPoint_placeStatus'] || 
-                                   rowsAtLocation[0]['Status_simplified'] || '';
-                const statusLower = placeStatus.toLowerCase();
-                
-                if (statusLower === 'operating') {
-                    borderColor = 'white';
-                    borderWidth = 2;
-                } else if (statusLower === 'permanently closed') {
-                    // No border for permanently closed
-                    borderColor = 'none';
-                    borderWidth = 0;
-                }
-                // Other statuses: no border (default)
-            }
-            // Multiple locations: no border (locationCount > 1)
-            
-            // Calculate radius: account for border if present
-            const radius = borderWidth > 0 
-                ? (markerSize - borderWidth * 2) / 2 
-                : (markerSize - 2) / 2; // Small margin even without border
+            // Calculate radius: no border, just small margin
+            const radius = (markerSize - 2) / 2;
             
             // Create SVG pie chart
             let svgPaths = '';
