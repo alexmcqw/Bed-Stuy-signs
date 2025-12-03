@@ -433,6 +433,14 @@ body {
     border: 2px solid #B71C1C; /* Darker pink border */
 }
 
+.legend-marker.operating.old-school {
+    border: 2px solid white; /* White border for operating */
+}
+
+.legend-marker.operating.new-school {
+    border: 2px solid white; /* White border for operating */
+}
+
 /* Leaflet popup styles */
 .leaflet-popup-content-wrapper {
     border-radius: 8px;
