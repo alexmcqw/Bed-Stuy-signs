@@ -89,38 +89,33 @@
                 <!-- Map Tab -->
                 <div id="map" class="tab-panel" role="tabpanel">
                     <section class="content-section">
-                        <h2>Storefront Typography Map</h2>
                         <p>This visualization maps storefronts across Bedford-Stuyvesant, categorized by typography style (Old-school vs. New-school) to examine patterns of gentrification.</p>
-                        <div class="map-stats">
-                            <p><strong>Total markers:</strong> <span id="total-markers">0</span></p>
-                            <p><strong>Old-school:</strong> <span id="old-school-count">0</span> | <strong>New-school:</strong> <span id="new-school-count">0</span></p>
+                        <div class="map-legend">
+                            <div class="legend-section">
+                                <div class="legend-item">
+                                    <span class="legend-color old-school"></span>
+                                    <span>Old-school Typography (<span id="traditional-count">0</span>)</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color new-school"></span>
+                                    <span>New-school Typography (<span id="modern-count">0</span>)</span>
+                                </div>
+                            </div>
+                            <div class="legend-section">
+                                <p class="legend-section-title">Status:</p>
+                                <div class="legend-item">
+                                    <span class="legend-marker closed old-school"></span>
+                                    <span>Closed</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-marker new old-school"></span>
+                                    <span>New</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="map-container">
                             <div id="map-visualization" class="map-visualization">
                                 <!-- Leaflet map will be rendered here -->
-                            </div>
-                            <div class="map-legend">
-                                <div class="legend-section">
-                                    <div class="legend-item">
-                                        <span class="legend-color old-school"></span>
-                                        <span>Old-school Typography (<span id="traditional-count">0</span>)</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <span class="legend-color new-school"></span>
-                                        <span>New-school Typography (<span id="modern-count">0</span>)</span>
-                                    </div>
-                                </div>
-                                <div class="legend-section">
-                                    <p class="legend-section-title">Status:</p>
-                                    <div class="legend-item">
-                                        <span class="legend-marker closed old-school"></span>
-                                        <span>Closed</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <span class="legend-marker new old-school"></span>
-                                        <span>New</span>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         <p class="map-description">The map reveals spatial clustering of typography styles, with traditional storefronts concentrated in certain neighborhoods and modern typography appearing in areas experiencing rapid development.</p>

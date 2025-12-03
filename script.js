@@ -554,9 +554,6 @@ function createMarkers(rows) {
     });
 
     // Update stats
-    document.getElementById('total-markers').textContent = totalCount;
-    document.getElementById('old-school-count').textContent = oldSchoolCount;
-    document.getElementById('new-school-count').textContent = newSchoolCount;
     document.getElementById('traditional-count').textContent = oldSchoolCount;
     document.getElementById('modern-count').textContent = newSchoolCount;
 
