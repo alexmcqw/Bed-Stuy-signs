@@ -1890,10 +1890,10 @@ async function initComparisonVisualization() {
 
 // Helper function to get old-school gradient color (dark-brown to lightest brown)
 function getOldSchoolGradientColor(confidence) {
-    // Confidence: 100% = darkest brown, 0% = lightest brown
-    // Dark brown: #5A4A2F (RGB: 90, 74, 47)
+    // Confidence: 100% = medium-dark brown (lighter for better border visibility), 0% = lightest brown
+    // Medium-dark brown: #8B6F47 (RGB: 139, 111, 71) - lighter than original dark
     // Lightest brown: #D2B48C (RGB: 210, 180, 140)
-    const darkR = 90, darkG = 74, darkB = 47;
+    const darkR = 139, darkG = 111, darkB = 71;
     const lightR = 210, lightG = 180, lightB = 140;
     
     const ratio = confidence / 100; // 1.0 for 100%, 0.0 for 0%
@@ -1904,12 +1904,12 @@ function getOldSchoolGradientColor(confidence) {
     return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Helper function to get new-school gradient color (dark-pink to lightest pink)
+// Helper function to get new-school gradient color (medium-dark pink to lightest pink)
 function getNewSchoolGradientColor(confidence) {
-    // Confidence: 100% = darkest pink, 0% = lightest pink
-    // Dark pink: #B71C1C (RGB: 183, 28, 28)
+    // Confidence: 100% = medium-dark pink (lighter for better border visibility), 0% = lightest pink
+    // Medium-dark pink: #E91E63 (RGB: 233, 30, 99) - lighter than original dark
     // Lightest pink: #F8D7DA (RGB: 248, 215, 218)
-    const darkR = 183, darkG = 28, darkB = 28;
+    const darkR = 233, darkG = 30, darkB = 99;
     const lightR = 248, lightG = 215, lightB = 218;
     
     const ratio = confidence / 100; // 1.0 for 100%, 0.0 for 0%
