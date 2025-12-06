@@ -819,6 +819,11 @@ async function initTimeline() {
                         row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 
                         'Unknown';
 
+            // Get photo URL (column AE)
+            const headers = parsed.meta.fields || Object.keys(parsed.data[0] || {});
+            const columnAE = headers[30]; // Column AE is the 31st column (0-indexed: 30)
+            const photoUrl = row[columnAE] || row['Photo_URL'] || '';
+
             // Determine actual dates
             const actualStartDate = startDate || new Date(0);
             const actualEndDate = endDate || now;
@@ -846,7 +851,8 @@ async function initTimeline() {
                 isClosed: isClosed,
                 isPermanentlyClosed: isPermanentlyClosed,
                 isOperating: isOperating,
-                placeStatus: placeStatus
+                placeStatus: placeStatus,
+                photoUrl: photoUrl
             });
         });
 
@@ -911,7 +917,9 @@ async function initTimeline() {
                     isPermanentlyClosed: business.isPermanentlyClosed,
                     isOperating: business.isOperating,
                     startYear: business.startYear,
-                    endYear: business.endYear
+                    endYear: business.endYear,
+                    photoUrl: business.photoUrl,
+                    index: index // Store original index for reference
                 };
             });
             
@@ -1019,30 +1027,120 @@ async function initTimeline() {
                 ]
             });
 
-            timelineContainer.appendChild(plot);
+            // Wrap plot in a scrollable container for sticky x-axis
+            const plotWrapper = document.createElement('div');
+            plotWrapper.className = 'timeline-plot-wrapper';
+            plotWrapper.style.cssText = 'position: relative; overflow-y: auto; max-height: 800px;';
+            plotWrapper.appendChild(plot);
+            timelineContainer.appendChild(plotWrapper);
             
             // Make x-axis sticky after plot is rendered
             setTimeout(() => {
                 const svg = timelineContainer.querySelector('svg');
                 if (svg) {
-                    // Find x-axis group (usually the first g element with transform)
-                    const xAxisGroups = svg.querySelectorAll('g[transform*="translate"]');
-                    if (xAxisGroups.length > 0) {
-                        // The top axis should be one of the first groups
-                        const topAxis = Array.from(xAxisGroups).find(g => {
-                            const transform = g.getAttribute('transform') || '';
-                            // Check if it's positioned at the top (y translation near 0 or small)
-                            return transform.includes('translate(0') || transform.includes('translate(');
-                        });
-                        if (topAxis) {
-                            topAxis.style.position = 'sticky';
-                            topAxis.style.top = '0';
-                            topAxis.style.zIndex = '10';
-                            topAxis.style.backgroundColor = '#f8fafc';
+                    // Find the x-axis group - it should be near the top
+                    const allGroups = Array.from(svg.querySelectorAll('g'));
+                    const xAxisGroup = allGroups.find(g => {
+                        const transform = g.getAttribute('transform') || '';
+                        const match = transform.match(/translate\([^,]+,\s*([\d.]+)\)/);
+                        if (match) {
+                            const yPos = parseFloat(match[1]);
+                            // X-axis should be near the top (within marginTop range)
+                            return yPos >= 50 && yPos <= 80;
                         }
+                        return false;
+                    });
+                    
+                    if (xAxisGroup) {
+                        xAxisGroup.style.position = 'sticky';
+                        xAxisGroup.style.top = '0';
+                        xAxisGroup.style.zIndex = '100';
+                        xAxisGroup.style.backgroundColor = '#f8fafc';
+                        xAxisGroup.style.paddingBottom = '15px';
+                        xAxisGroup.style.paddingTop = '5px';
+                        
+                        // Add a backdrop rect for better visibility
+                        const svgNS = 'http://www.w3.org/2000/svg';
+                        const backdrop = document.createElementNS(svgNS, 'rect');
+                        const svgWidth = parseFloat(svg.getAttribute('width') || '1200');
+                        backdrop.setAttribute('x', '-200'); // Start before left margin
+                        backdrop.setAttribute('y', '-10');
+                        backdrop.setAttribute('width', svgWidth.toString());
+                        backdrop.setAttribute('height', '70');
+                        backdrop.setAttribute('fill', '#f8fafc');
+                        backdrop.setAttribute('opacity', '0.95');
+                        xAxisGroup.insertBefore(backdrop, xAxisGroup.firstChild);
                     }
+                    
+                    // Add tooltips to dots by matching y-coordinates
+                    const allCircles = Array.from(svg.querySelectorAll('circle'));
+                    const marginTop = 60; // Match the marginTop from plot config
+                    
+                    allCircles.forEach(circle => {
+                        const fill = circle.getAttribute('fill');
+                        // Only process dots with our business colors
+                        if (fill === '#8B6F47' || fill === '#E91E63' || 
+                            fill === 'rgb(139, 111, 71)' || fill === 'rgb(233, 30, 99)') {
+                            
+                            const circleY = parseFloat(circle.getAttribute('cy') || '0');
+                            
+                            // Match dot to business by y-coordinate
+                            // The y value in plotData corresponds to the row position
+                            let matchingBusiness = null;
+                            let minDistance = Infinity;
+                            
+                            plotData.forEach(plotItem => {
+                                // Calculate the expected y position for this business
+                                // Observable Plot uses the y value directly, adjusted by marginTop
+                                const expectedY = plotItem.y + marginTop;
+                                const distance = Math.abs(circleY - expectedY);
+                                
+                                if (distance < minDistance && distance < 15) {
+                                    minDistance = distance;
+                                    matchingBusiness = businesses[plotItem.index];
+                                }
+                            });
+                            
+                            if (matchingBusiness) {
+                                // Create tooltip
+                                const tooltip = document.createElement('div');
+                                tooltip.className = 'timeline-dot-tooltip';
+                                
+                                let tooltipContent = `<strong>${matchingBusiness.name}</strong>`;
+                                if (matchingBusiness.photoUrl && matchingBusiness.photoUrl.trim()) {
+                                    tooltipContent += `<br><img src="${matchingBusiness.photoUrl}" alt="${matchingBusiness.name}" onerror="this.style.display='none'">`;
+                                }
+                                
+                                tooltip.innerHTML = tooltipContent;
+                                document.body.appendChild(tooltip);
+                                
+                                // Add hover events
+                                circle.addEventListener('mouseenter', () => {
+                                    tooltip.style.display = 'block';
+                                    const rect = circle.getBoundingClientRect();
+                                    tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+                                    tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+                                    
+                                    // Adjust if tooltip goes off screen
+                                    if (parseFloat(tooltip.style.left) < 10) {
+                                        tooltip.style.left = '10px';
+                                    }
+                                    const maxLeft = window.innerWidth - tooltip.offsetWidth - 10;
+                                    if (parseFloat(tooltip.style.left) > maxLeft) {
+                                        tooltip.style.left = maxLeft + 'px';
+                                    }
+                                });
+                                
+                                circle.addEventListener('mouseleave', () => {
+                                    tooltip.style.display = 'none';
+                                });
+                                
+                                circle.style.cursor = 'pointer';
+                            }
+                        }
+                    });
                 }
-            }, 100);
+            }, 200);
         };
 
         waitForPlot();
