@@ -1631,11 +1631,22 @@ async function initComparisonVisualization() {
                 return item.confidence > 0 && item.imageUrl && item.imageUrl.length > 0;
             })
 
-        // Group by rounded confidence level
+        // Group by decile (0-9%, 10-19%, 20-29%, ..., 90-99%, 100%)
         const groupByConfidence = (items) => {
             const groups = {};
             items.forEach(item => {
-                const confidenceLevel = Math.round(item.confidence);
+                const confidence = Math.round(item.confidence);
+                let confidenceLevel;
+                
+                // Special case for 100%
+                if (confidence === 100) {
+                    confidenceLevel = 100;
+                } else {
+                    // Group into deciles: 0-9, 10-19, 20-29, ..., 90-99
+                    const decile = Math.floor(confidence / 10) * 10;
+                    confidenceLevel = decile;
+                }
+                
                 if (!groups[confidenceLevel]) {
                     groups[confidenceLevel] = [];
                 }
@@ -1688,11 +1699,20 @@ async function initComparisonVisualization() {
             const oldSchoolItems = oldSchoolGroups[confidenceLevel] || [];
             const newSchoolItems = newSchoolGroups[confidenceLevel] || [];
 
+            // Format confidence level label for deciles
+            const formatConfidenceLabel = (level) => {
+                if (level === 100) {
+                    return '100%';
+                } else {
+                    return `${level}-${level + 9}%`;
+                }
+            };
+
             // Create confidence level header for old-school
             if (oldSchoolItems.length > 0) {
                 const headerDiv = document.createElement('div');
                 headerDiv.className = 'confidence-level-header';
-                headerDiv.textContent = `${confidenceLevel}%`;
+                headerDiv.textContent = formatConfidenceLabel(confidenceLevel);
                 oldSchoolContainer.appendChild(headerDiv);
             }
 
@@ -1700,7 +1720,7 @@ async function initComparisonVisualization() {
             if (newSchoolItems.length > 0) {
                 const headerDiv = document.createElement('div');
                 headerDiv.className = 'confidence-level-header';
-                headerDiv.textContent = `${confidenceLevel}%`;
+                headerDiv.textContent = formatConfidenceLabel(confidenceLevel);
                 newSchoolContainer.appendChild(headerDiv);
             }
 
