@@ -116,7 +116,7 @@ function initAnnotations() {
     
     // Annotations for second image (storefront1.jpeg) - no arrows
     addAnnotation('annotations2', 'Minimal text', 'right', 50, 30, 25, false);
-    addAnnotation('annotations2', 'Minimalist Design', 'left', 50, 55, 50, false);
+    addAnnotation('annotations2', 'Restrained use of color', 'left', 50, 55, 50, false);
     addAnnotation('annotations2', 'Lots of glass', 'right', 25, 80, 75, false);
 }
 
