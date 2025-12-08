@@ -111,7 +111,7 @@ function initAnnotations() {
     
     // Annotations for first image (storefront2.jpg) - no arrows
     addAnnotation('annotations1', 'Large, clear signage', 'left', 50, 15, 15, false);
-    addAnnotation('annotations1', 'Window Display', 'right', 50, 50, 45, false);
+    addAnnotation('annotations1', 'Vague naming/offerings', 'right', 50, 50, 45, false);
     addAnnotation('annotations1', 'Lots of color', 'left', 75, 55, 40, false);
     addAnnotation('annotations1', 'Photography, visible products', 'right', 50, 50, 50, false);
     
