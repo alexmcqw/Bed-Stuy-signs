@@ -2,39 +2,43 @@
 // side: 'left' or 'right' - which side of the image the label should be on
 // targetX, targetY: position in the image where the arrow should point (percentages)
 // labelY: vertical position of the label (percentage)
-function addAnnotation(containerId, label, side, targetX, targetY, labelY) {
+// showArrow: optional boolean to show/hide the arrow (default: true)
+function addAnnotation(containerId, label, side, targetX, targetY, labelY, showArrow = true) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // Ensure shared SVG defs exists in container (create once per container)
-    let sharedSvg = container.querySelector('svg.annotation-defs');
-    if (!sharedSvg) {
-        sharedSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        sharedSvg.className = 'annotation-defs';
-        sharedSvg.style.position = 'absolute';
-        sharedSvg.style.top = '0';
-        sharedSvg.style.left = '0';
-        sharedSvg.style.width = '100%';
-        sharedSvg.style.height = '100%';
-        sharedSvg.style.pointerEvents = 'none';
-        sharedSvg.style.zIndex = '1';
-        
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-        const markerId = `arrowhead-${containerId}`;
-        marker.setAttribute('id', markerId);
-        marker.setAttribute('markerWidth', '10');
-        marker.setAttribute('markerHeight', '10');
-        marker.setAttribute('refX', '9');
-        marker.setAttribute('refY', '3');
-        marker.setAttribute('orient', 'auto');
-        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-        polygon.setAttribute('points', '0 0, 10 3, 0 6');
-        polygon.setAttribute('fill', '#1e293b');
-        marker.appendChild(polygon);
-        defs.appendChild(marker);
-        sharedSvg.appendChild(defs);
-        container.appendChild(sharedSvg);
+    // Only create SVG defs if arrows are needed
+    if (showArrow) {
+        // Ensure shared SVG defs exists in container (create once per container)
+        let sharedSvg = container.querySelector('svg.annotation-defs');
+        if (!sharedSvg) {
+            sharedSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            sharedSvg.className = 'annotation-defs';
+            sharedSvg.style.position = 'absolute';
+            sharedSvg.style.top = '0';
+            sharedSvg.style.left = '0';
+            sharedSvg.style.width = '100%';
+            sharedSvg.style.height = '100%';
+            sharedSvg.style.pointerEvents = 'none';
+            sharedSvg.style.zIndex = '1';
+            
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            const markerId = `arrowhead-${containerId}`;
+            marker.setAttribute('id', markerId);
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '10');
+            marker.setAttribute('refX', '9');
+            marker.setAttribute('refY', '3');
+            marker.setAttribute('orient', 'auto');
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 10 3, 0 6');
+            polygon.setAttribute('fill', '#1e293b');
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            sharedSvg.appendChild(defs);
+            container.appendChild(sharedSvg);
+        }
     }
 
     const annotation = document.createElement('div');
@@ -58,38 +62,40 @@ function addAnnotation(containerId, label, side, targetX, targetY, labelY) {
     labelEl.textContent = label;
     annotation.appendChild(labelEl);
     
-    // Create arrow SVG
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-    svg.style.position = 'absolute';
-    svg.style.top = '0';
-    svg.style.left = '0';
-    svg.style.pointerEvents = 'none';
-    svg.style.zIndex = '2';
-    
-    const markerId = `arrowhead-${containerId}`;
-    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    
-    // Arrow starts from label position and points to target in image
-    let arrowStartX, arrowStartY;
-    if (side === 'left') {
-        arrowStartX = 0; // Start at left edge of image
-    } else {
-        arrowStartX = 100; // Start at right edge of image
+    // Create arrow SVG only if showArrow is true
+    if (showArrow) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
+        svg.style.position = 'absolute';
+        svg.style.top = '0';
+        svg.style.left = '0';
+        svg.style.pointerEvents = 'none';
+        svg.style.zIndex = '2';
+        
+        const markerId = `arrowhead-${containerId}`;
+        const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        
+        // Arrow starts from label position and points to target in image
+        let arrowStartX, arrowStartY;
+        if (side === 'left') {
+            arrowStartX = 0; // Start at left edge of image
+        } else {
+            arrowStartX = 100; // Start at right edge of image
+        }
+        arrowStartY = labelY; // Same vertical position as label
+        
+        arrow.setAttribute('x1', `${arrowStartX}%`);
+        arrow.setAttribute('y1', `${arrowStartY}%`);
+        arrow.setAttribute('x2', `${targetX}%`);
+        arrow.setAttribute('y2', `${targetY}%`);
+        arrow.setAttribute('stroke', '#1e293b');
+        arrow.setAttribute('stroke-width', '2');
+        arrow.setAttribute('marker-end', `url(#${markerId})`);
+        
+        svg.appendChild(arrow);
+        annotation.appendChild(svg);
     }
-    arrowStartY = labelY; // Same vertical position as label
-    
-    arrow.setAttribute('x1', `${arrowStartX}%`);
-    arrow.setAttribute('y1', `${arrowStartY}%`);
-    arrow.setAttribute('x2', `${targetX}%`);
-    arrow.setAttribute('y2', `${targetY}%`);
-    arrow.setAttribute('stroke', '#1e293b');
-    arrow.setAttribute('stroke-width', '2');
-    arrow.setAttribute('marker-end', `url(#${markerId})`);
-    
-    svg.appendChild(arrow);
-    annotation.appendChild(svg);
     
     container.appendChild(annotation);
 }
@@ -102,15 +108,15 @@ function initAnnotations() {
     // targetX, targetY: position in the image where the arrow should point (percentages)
     // labelY: vertical position of the label (percentage)
     
-    // Annotations for first image (storefront2.jpg)
-    addAnnotation('annotations1', 'Storefront Sign', 'left', 50, 25, 20);
-    addAnnotation('annotations1', 'Window Display', 'right', 50, 50, 45);
-    addAnnotation('annotations1', 'Doorway', 'left', 50, 85, 70);
+    // Annotations for first image (storefront2.jpg) - no arrows
+    addAnnotation('annotations1', 'Large, clear signage', 'left', 50, 15, 15, false);
+    addAnnotation('annotations1', 'Window Display', 'right', 50, 50, 45, false);
+    addAnnotation('annotations1', 'Doorway', 'left', 50, 85, 70, false);
     
-    // Annotations for second image (storefront1.jpeg)
-    addAnnotation('annotations2', 'Typography Style', 'right', 50, 30, 25);
-    addAnnotation('annotations2', 'Color Scheme', 'left', 50, 55, 50);
-    addAnnotation('annotations2', 'Architectural Detail', 'right', 50, 80, 75);
+    // Annotations for second image (storefront1.jpeg) - no arrows
+    addAnnotation('annotations2', 'Modern Typography', 'right', 50, 30, 25, false);
+    addAnnotation('annotations2', 'Minimalist Design', 'left', 50, 55, 50, false);
+    addAnnotation('annotations2', 'Contemporary Aesthetic', 'right', 50, 80, 75, false);
 }
 
 // Tab Navigation
