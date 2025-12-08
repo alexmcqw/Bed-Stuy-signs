@@ -111,13 +111,13 @@ function initAnnotations() {
     
     // Annotations for first image (storefront2.jpg) - no arrows
     addAnnotation('annotations1', 'Large, clear signage', 'left', 50, 15, 15, false);
-    addAnnotation('annotations1', 'Photography, visible products', 'right', 50, 10, 35, false);
+    addAnnotation('annotations1', 'Photography, visible products', 'right', 45, 10, 35, false);
     addAnnotation('annotations1', 'Lots of color', 'left', 75, 55, 40, false);
     
     // Annotations for second image (storefront1.jpeg) - no arrows
-    addAnnotation('annotations2', 'Minimal text', 'right', 50, 30, 25, false);
+    addAnnotation('annotations2', 'Minimal text', 'right', 45, 30, 25, false);
     addAnnotation('annotations2', 'Restrained use of color', 'left', 50, 55, 50, false);
-    addAnnotation('annotations2', 'Lots of glass', 'right', 25, 80, 75, false);
+    addAnnotation('annotations2', 'Lots of glass', 'right', 20, 80, 75, false);
     addAnnotation('annotations2', 'Vague naming/offerings', 'left', 20, 65, 65, false);
 }
 
