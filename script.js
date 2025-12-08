@@ -961,7 +961,7 @@ async function initTimeline() {
                 marginLeft: 200, // Space for business names
                 marginTop: 60, // Space for year labels
                 marginRight: 0, // No right margin to use full width
-                height: Math.max(400, businesses.length * 20), // Dynamic height based on number of businesses
+                height: Math.max(400, businesses.length * 10), // Dynamic height based on number of businesses
                 x: {
                     type: "time",
                     domain: [minDate || new Date(timelineStartYear, 0, 1), maxDate],
