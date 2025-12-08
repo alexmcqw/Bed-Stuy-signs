@@ -1080,9 +1080,27 @@ async function initTimeline() {
                         xAxisGroup.insertBefore(backdrop, xAxisGroup.firstChild);
                     }
                     
-                    // Add tooltips to dots by matching y-coordinates
+                    // Add tooltips to dots by matching both x and y coordinates
                     const allCircles = Array.from(svg.querySelectorAll('circle'));
                     const marginTop = 60; // Match the marginTop from plot config
+                    const marginLeft = 200; // Match the marginLeft from plot config
+                    
+                    // Get the plot dimensions to calculate scales
+                    const plotHeight = parseFloat(svg.getAttribute('height') || '400');
+                    const plotWidth = parseFloat(svg.getAttribute('width') || '1200');
+                    const chartHeight = plotHeight - marginTop;
+                    const chartWidth = plotWidth - marginLeft;
+                    
+                    // Get y domain (range of y values)
+                    const yDomain = plotData.map(d => d.y);
+                    const yMin = Math.min(...yDomain);
+                    const yMax = Math.max(...yDomain);
+                    const yRange = yMax - yMin || 1; // Avoid division by zero
+                    
+                    // Get x domain (date range)
+                    const xMin = timelineStart.getTime();
+                    const xMax = timelineEnd.getTime();
+                    const xRange = xMax - xMin || 1;
                     
                     allCircles.forEach(circle => {
                         const fill = circle.getAttribute('fill');
@@ -1090,21 +1108,39 @@ async function initTimeline() {
                         if (fill === '#8B6F47' || fill === '#E91E63' || 
                             fill === 'rgb(139, 111, 71)' || fill === 'rgb(233, 30, 99)') {
                             
+                            const circleX = parseFloat(circle.getAttribute('cx') || '0');
                             const circleY = parseFloat(circle.getAttribute('cy') || '0');
                             
-                            // Match dot to business by y-coordinate
-                            // The y value in plotData corresponds to the row position
+                            // Convert circle coordinates back to data coordinates
+                            // Observable Plot scales: y is inverted (top is max, bottom is min)
+                            const normalizedY = (circleY - marginTop) / chartHeight;
+                            const dataY = yMax - (normalizedY * yRange);
+                            
+                            // Convert x coordinate to date
+                            const normalizedX = (circleX - marginLeft) / chartWidth;
+                            const dataX = xMin + (normalizedX * xRange);
+                            const circleDate = new Date(dataX);
+                            
+                            // Match dot to business by both y-coordinate and date
                             let matchingBusiness = null;
                             let minDistance = Infinity;
                             
                             plotData.forEach(plotItem => {
-                                // Calculate the expected y position for this business
-                                // Observable Plot uses the y value directly, adjusted by marginTop
-                                const expectedY = plotItem.y + marginTop;
-                                const distance = Math.abs(circleY - expectedY);
+                                // Check if y coordinates match (within tolerance)
+                                const yDistance = Math.abs(dataY - plotItem.y);
                                 
-                                if (distance < minDistance && distance < 15) {
-                                    minDistance = distance;
+                                // Check if date matches (for start dots, check x1; for end dots, check x2)
+                                const plotItemX1 = plotItem.x1.getTime();
+                                const plotItemX2 = plotItem.x2.getTime();
+                                const dateDistance1 = Math.abs(circleDate.getTime() - plotItemX1);
+                                const dateDistance2 = Math.abs(circleDate.getTime() - plotItemX2);
+                                const dateDistance = Math.min(dateDistance1, dateDistance2);
+                                
+                                // Combined distance (prioritize y match, but also check date)
+                                const combinedDistance = yDistance * 10 + dateDistance / (1000 * 60 * 60 * 24); // Normalize date to days
+                                
+                                if (yDistance < 1 && dateDistance < 30 * 24 * 60 * 60 * 1000 && combinedDistance < minDistance) {
+                                    minDistance = combinedDistance;
                                     matchingBusiness = businesses[plotItem.index];
                                 }
                             });
