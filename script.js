@@ -118,7 +118,7 @@ function initAnnotations() {
     addAnnotation('annotations2', 'Minimal text', 'right', 50, 30, 25, false);
     addAnnotation('annotations2', 'Restrained use of color', 'left', 50, 55, 50, false);
     addAnnotation('annotations2', 'Lots of glass', 'right', 25, 80, 75, false);
-    addAnnotation('annotations2', 'Photography, visible products', 'left', 50, 65, 65, false);
+    addAnnotation('annotations2', 'Photography, visible products', 'left', 40, 65, 65, false);
 }
 
 // Tab Navigation
