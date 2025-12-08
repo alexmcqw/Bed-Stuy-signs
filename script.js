@@ -101,6 +101,7 @@ function addAnnotation(containerId, label, side, targetX, targetY, labelY, showA
 }
 
 // Initialize annotations when page loads
+// Updated: 2024-12-07
 function initAnnotations() {
     // Example annotations - you can customize these
     // Format: addAnnotation(containerId, label, side, targetX%, targetY%, labelY%)
@@ -111,12 +112,12 @@ function initAnnotations() {
     // Annotations for first image (storefront2.jpg) - no arrows
     addAnnotation('annotations1', 'Large, clear signage', 'left', 50, 15, 15, false);
     addAnnotation('annotations1', 'Window Display', 'right', 50, 50, 45, false);
-    addAnnotation('annotations1', 'Doorway', 'left', 50, 85, 70, false);
+    addAnnotation('annotations1', 'Lots of color', 'left', 75, 55, 40, false);
     
     // Annotations for second image (storefront1.jpeg) - no arrows
     addAnnotation('annotations2', 'Modern Typography', 'right', 50, 30, 25, false);
     addAnnotation('annotations2', 'Minimalist Design', 'left', 50, 55, 50, false);
-    addAnnotation('annotations2', 'Contemporary Aesthetic', 'right', 50, 80, 75, false);
+    addAnnotation('annotations2', 'Lots of glass', 'right', 25, 80, 75, false);
 }
 
 // Tab Navigation
@@ -2026,6 +2027,7 @@ function getNewSchoolGradientColor(confidence) {
 
 // Sankey Diagram for Turnover Flow
 async function initSankeyDiagram() {
+    console.log('initSankeyDiagram called - version with 5 phases');
     const sankeyContainer = document.getElementById('sankey-diagram');
     if (!sankeyContainer || sankeyContainer.dataset.initialized === 'true') return;
 
@@ -2091,52 +2093,22 @@ async function initSankeyDiagram() {
             return;
         }
 
-        // Extract all unique dates and sort them
-        const allDates = new Set();
+        // Sort businesses at each location by date to determine phase order
         multiBusinessGroups.forEach(([_, businesses]) => {
-            businesses.forEach(b => {
-                if (b.placeCreationDate) {
-                    allDates.add(b.placeCreationDate);
-                }
+            businesses.sort((a, b) => {
+                const dateA = new Date(a.placeCreationDate || 0);
+                const dateB = new Date(b.placeCreationDate || 0);
+                return dateA - dateB;
             });
         });
-
-        // Sort dates and create time periods
-        const sortedDates = Array.from(allDates).sort((a, b) => {
-            const dateA = new Date(a);
-            const dateB = new Date(b);
-            return dateA - dateB;
-        });
-
-        // Group dates into periods (e.g., by year or quarter)
-        const datePeriods = {};
-        sortedDates.forEach(dateStr => {
-            try {
-                const date = new Date(dateStr);
-                const year = date.getFullYear();
-                const quarter = Math.floor(date.getMonth() / 3) + 1;
-                const periodKey = `${year}-Q${quarter}`;
-                
-                if (!datePeriods[periodKey]) {
-                    datePeriods[periodKey] = [];
-                }
-                datePeriods[periodKey].push(dateStr);
-            } catch (e) {
-                // If date parsing fails, use the date string as-is
-                const periodKey = dateStr.substring(0, 7); // Use YYYY-MM format
-                if (!datePeriods[periodKey]) {
-                    datePeriods[periodKey] = [];
-                }
-                datePeriods[periodKey].push(dateStr);
-            }
-        });
-
-        const periodKeys = Object.keys(datePeriods).sort();
 
         // Build nodes and links
         const nodes = [];
         const links = [];
         const nodeMap = new Map();
+
+        // Define 5 phases
+        const phases = ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5'];
 
         // Add location nodes (left side)
         multiBusinessGroups.forEach(([coordKey, businesses], idx) => {
@@ -2155,34 +2127,28 @@ async function initSankeyDiagram() {
             nodes.push(nodeMap.get(nodeId));
         });
 
-        // Add time period nodes (right side)
-        periodKeys.forEach((periodKey, idx) => {
-            const nodeId = `period-${idx}`;
+        // Add phase nodes (5 columns)
+        phases.forEach((phaseName, phaseIdx) => {
+            const nodeId = `phase-${phaseIdx}`;
             nodeMap.set(nodeId, {
                 id: nodeId,
-                name: periodKey,
-                type: 'period',
-                index: idx
+                name: phaseName,
+                type: 'phase',
+                index: phaseIdx
             });
             nodes.push(nodeMap.get(nodeId));
         });
 
-        // Create links from locations to time periods
+        // Create links from locations to phases based on business order
         multiBusinessGroups.forEach(([coordKey, businesses], locationIdx) => {
-            businesses.forEach(business => {
-                if (!business.placeCreationDate) return;
-
-                // Find which period this date belongs to
-                let targetPeriodIdx = -1;
-                periodKeys.forEach((periodKey, idx) => {
-                    if (datePeriods[periodKey].includes(business.placeCreationDate)) {
-                        targetPeriodIdx = idx;
-                    }
-                });
-
-                if (targetPeriodIdx >= 0) {
+            businesses.forEach((business, businessOrder) => {
+                // businessOrder is 0-indexed, so add 1 to get phase number (1-5)
+                const phaseNumber = businessOrder + 1;
+                
+                // Only create links for phases 1-5
+                if (phaseNumber <= 5) {
                     const sourceId = `location-${locationIdx}`;
-                    const targetId = `period-${targetPeriodIdx}`;
+                    const targetId = `phase-${phaseNumber - 1}`; // phaseIdx is 0-indexed
                     
                     // Check if link already exists
                     const existingLink = links.find(l => 
@@ -2204,7 +2170,7 @@ async function initSankeyDiagram() {
         });
 
         // Render Sankey diagram using D3.js
-        const width = Math.max(1200, sankeyContainer.offsetWidth || 1200);
+        const width = Math.max(1400, sankeyContainer.offsetWidth || 1400);
         const height = Math.max(600, multiBusinessGroups.length * 15 + 200);
 
         sankeyContainer.innerHTML = '';
@@ -2215,7 +2181,7 @@ async function initSankeyDiagram() {
 
         // Create a simple flow diagram (custom Sankey-like visualization)
         const locationNodes = nodes.filter(n => n.type === 'location');
-        const periodNodes = nodes.filter(n => n.type === 'period');
+        const phaseNodes = nodes.filter(n => n.type === 'phase');
 
         const leftMargin = 50;
         const rightMargin = 50;
@@ -2223,7 +2189,8 @@ async function initSankeyDiagram() {
         const nodeHeight = 15;
         const nodeSpacing = 5;
         const leftX = leftMargin;
-        const rightX = width - rightMargin - 200;
+        const columnWidth = (width - leftMargin - rightMargin - 150) / 5; // Divide remaining space into 5 columns
+        const columnSpacing = columnWidth;
 
         // Draw location nodes (left)
         locationNodes.forEach((node, i) => {
@@ -2248,29 +2215,30 @@ async function initSankeyDiagram() {
                 .text(`${node.name} (${node.businessCount})`);
         });
 
-        // Draw period nodes (right)
-        periodNodes.forEach((node, i) => {
-            const y = topMargin + i * (nodeHeight + nodeSpacing * 2);
+        // Draw phase nodes (5 columns)
+        phaseNodes.forEach((node, phaseIdx) => {
+            const phaseX = leftX + 150 + phaseIdx * columnSpacing + 20; // Start after location column, add spacing
+            const phaseY = topMargin; // All phases at the top
             
             svg.append('rect')
-                .attr('x', rightX)
-                .attr('y', y)
-                .attr('width', 80)
+                .attr('x', phaseX)
+                .attr('y', phaseY)
+                .attr('width', 100)
                 .attr('height', nodeHeight)
                 .attr('fill', '#94a3b8')
                 .attr('stroke', '#fff')
                 .attr('stroke-width', 1);
 
             svg.append('text')
-                .attr('x', rightX + 5)
-                .attr('y', y + nodeHeight / 2)
+                .attr('x', phaseX + 5)
+                .attr('y', phaseY + nodeHeight / 2)
                 .attr('dy', '0.35em')
                 .attr('fill', '#fff')
                 .attr('font-size', '10px')
                 .text(node.name);
         });
 
-        // Draw links
+        // Draw links - connect from locations to phase columns
         const link = svg.append('g').selectAll('path')
             .data(links)
             .enter()
@@ -2279,14 +2247,15 @@ async function initSankeyDiagram() {
                 const sourceNode = nodeMap.get(d.source);
                 const targetNode = nodeMap.get(d.target);
                 const sourceIdx = locationNodes.indexOf(sourceNode);
-                const targetIdx = periodNodes.indexOf(targetNode);
+                const targetPhaseIdx = targetNode.index;
                 
                 const sourceY = topMargin + sourceIdx * (nodeHeight + nodeSpacing) + nodeHeight / 2;
-                const targetY = topMargin + targetIdx * (nodeHeight + nodeSpacing * 2) + nodeHeight / 2;
+                const targetX = leftX + 150 + targetPhaseIdx * columnSpacing + 20 + 50; // Center of phase column
+                const targetY = sourceY; // Keep same vertical position as source
                 
-                const midX = (leftX + 150 + rightX) / 2;
+                const midX = (leftX + 150 + targetX) / 2;
                 
-                return `M ${leftX + 150} ${sourceY} C ${midX} ${sourceY}, ${midX} ${targetY}, ${rightX} ${targetY}`;
+                return `M ${leftX + 150} ${sourceY} C ${midX} ${sourceY}, ${midX} ${targetY}, ${targetX} ${targetY}`;
             })
             .attr('fill', 'none')
             .attr('stroke', d => d.isOldSchool ? '#8B6F47' : '#E91E63')
@@ -2299,3 +2268,4 @@ async function initSankeyDiagram() {
     }
 }
 
+console.log('Script loaded: ' + new Date().toISOString());
