@@ -113,12 +113,12 @@ function initAnnotations() {
     addAnnotation('annotations1', 'Large, clear signage', 'left', 50, 15, 15, false);
     addAnnotation('annotations1', 'Vague naming/offerings', 'right', 50, 50, 45, false);
     addAnnotation('annotations1', 'Lots of color', 'left', 75, 55, 40, false);
-    addAnnotation('annotations1', 'Photography, visible products', 'right', 50, 50, 50, false);
     
     // Annotations for second image (storefront1.jpeg) - no arrows
     addAnnotation('annotations2', 'Minimal text', 'right', 50, 30, 25, false);
     addAnnotation('annotations2', 'Restrained use of color', 'left', 50, 55, 50, false);
     addAnnotation('annotations2', 'Lots of glass', 'right', 25, 80, 75, false);
+    addAnnotation('annotations2', 'Photography, visible products', 'left', 50, 65, 65, false);
 }
 
 // Tab Navigation
