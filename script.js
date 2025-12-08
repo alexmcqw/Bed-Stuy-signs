@@ -2268,4 +2268,4 @@ async function initSankeyDiagram() {
     }
 }
 
-console.log('Script loaded: ' + new Date().toISOString());
+console.log('Script loaded v2: ' + new Date().toISOString() + ' - Contains: CUNY Graduate Center, Lots of color, 5 phases');
