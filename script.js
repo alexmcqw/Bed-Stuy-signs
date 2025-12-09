@@ -1791,38 +1791,9 @@ async function initComparisonVisualization() {
                 return item.confidence > 0 && item.imageUrl && item.imageUrl.length > 0;
             })
 
-        // Group by decile (0-9%, 10-19%, 20-29%, ..., 90-99%, 100%)
-        const groupByConfidence = (items) => {
-            const groups = {};
-            items.forEach(item => {
-                const confidence = Math.round(item.confidence);
-                let confidenceLevel;
-                
-                // Special case for 100%
-                if (confidence === 100) {
-                    confidenceLevel = 100;
-                } else {
-                    // Group into deciles: 0-9, 10-19, 20-29, ..., 90-99
-                    const decile = Math.floor(confidence / 10) * 10;
-                    confidenceLevel = decile;
-                }
-                
-                if (!groups[confidenceLevel]) {
-                    groups[confidenceLevel] = [];
-                }
-                groups[confidenceLevel].push(item);
-            });
-            return groups;
-        };
-
-        const oldSchoolGroups = groupByConfidence(imageData.filter(d => d.isOldSchool));
-        const newSchoolGroups = groupByConfidence(imageData.filter(d => !d.isOldSchool));
-
-        // Get all confidence levels, sorted descending
-        const allConfidenceLevels = [...new Set([
-            ...Object.keys(oldSchoolGroups).map(Number),
-            ...Object.keys(newSchoolGroups).map(Number)
-        ])].sort((a, b) => b - a);
+        // No longer grouping by confidence - just separate old-school and new-school
+        const oldSchoolItems = imageData.filter(d => d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
+        const newSchoolItems = imageData.filter(d => !d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
 
         // Create visualization structure
         container.innerHTML = `
@@ -1854,57 +1825,17 @@ async function initComparisonVisualization() {
             return 'size-smallest';
         };
 
-        // Render each confidence level as a block
-        allConfidenceLevels.forEach(confidenceLevel => {
-            const oldSchoolItems = oldSchoolGroups[confidenceLevel] || [];
-            const newSchoolItems = newSchoolGroups[confidenceLevel] || [];
-
-            // Format confidence level label for deciles
-            const formatConfidenceLabel = (level) => {
-                if (level === 100) {
-                    return '100%';
-                } else {
-                    return `${level}-${level + 9}%`;
-                }
-            };
-
-            // Create confidence level header for old-school
-            if (oldSchoolItems.length > 0) {
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'confidence-level-header';
-                headerDiv.textContent = formatConfidenceLabel(confidenceLevel);
-                oldSchoolContainer.appendChild(headerDiv);
-            }
-
-            // Create confidence level header for new-school
-            if (newSchoolItems.length > 0) {
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'confidence-level-header';
-                headerDiv.textContent = formatConfidenceLabel(confidenceLevel);
-                newSchoolContainer.appendChild(headerDiv);
-            }
-
-            // Create image grid for this confidence level
-            const maxItems = Math.max(oldSchoolItems.length, newSchoolItems.length);
-            const itemsPerRow = 4; // Number of images per row
-
-            // Render old-school images in grid
-            if (oldSchoolItems.length > 0) {
-                const gridDiv = document.createElement('div');
-                gridDiv.className = 'confidence-level-grid';
-                
-                oldSchoolItems.forEach(item => {
-                    const bgColor = getOldSchoolGradientColor(item.confidence);
-                    const imgDiv = document.createElement('div');
-                    const sizeClass = getSizeClass(oldSchoolItemCount);
-                    imgDiv.className = `comparison-image-item ${sizeClass}`;
-                    imgDiv.style.backgroundColor = bgColor;
-                    
-                    // Add border for "new" status, similar to map tab
-                    const statusLower = (item.status || '').toLowerCase();
-                    if (statusLower === 'new') {
-                        imgDiv.style.border = '2px solid #5A4A2F'; // Darker brown border for new old-school
-                    }
+        // Render all old-school images in a single grid
+        if (oldSchoolItems.length > 0) {
+            const gridDiv = document.createElement('div');
+            gridDiv.className = 'confidence-level-grid';
+            
+            oldSchoolItems.forEach(item => {
+                const bgColor = getOldSchoolGradientColor(item.status);
+                const imgDiv = document.createElement('div');
+                const sizeClass = getSizeClass(oldSchoolItemCount);
+                imgDiv.className = `comparison-image-item ${sizeClass}`;
+                imgDiv.style.backgroundColor = bgColor;
                     
                     oldSchoolItemCount++;
                     
@@ -1953,26 +1884,20 @@ async function initComparisonVisualization() {
                     gridDiv.appendChild(imgDiv);
                 });
                 
-                oldSchoolContainer.appendChild(gridDiv);
-            }
+            oldSchoolContainer.appendChild(gridDiv);
+        }
 
-            // Render new-school images in grid
-            if (newSchoolItems.length > 0) {
-                const gridDiv = document.createElement('div');
-                gridDiv.className = 'confidence-level-grid';
-                
-                newSchoolItems.forEach(item => {
-                    const bgColor = getNewSchoolGradientColor(item.confidence);
-                    const imgDiv = document.createElement('div');
-                    const sizeClass = getSizeClass(newSchoolItemCount);
-                    imgDiv.className = `comparison-image-item ${sizeClass}`;
-                    imgDiv.style.backgroundColor = bgColor;
-                    
-                    // Add border for "new" status, similar to map tab
-                    const statusLower = (item.status || '').toLowerCase();
-                    if (statusLower === 'new') {
-                        imgDiv.style.border = '2px solid #B71C1C'; // Darker pink border for new new-school
-                    }
+        // Render all new-school images in a single grid
+        if (newSchoolItems.length > 0) {
+            const gridDiv = document.createElement('div');
+            gridDiv.className = 'confidence-level-grid';
+            
+            newSchoolItems.forEach(item => {
+                const bgColor = getNewSchoolGradientColor(item.status);
+                const imgDiv = document.createElement('div');
+                const sizeClass = getSizeClass(newSchoolItemCount);
+                imgDiv.className = `comparison-image-item ${sizeClass}`;
+                imgDiv.style.backgroundColor = bgColor;
                     
                     newSchoolItemCount++;
                     
@@ -2034,9 +1959,8 @@ async function initComparisonVisualization() {
                     gridDiv.appendChild(imgDiv);
                 });
                 
-                newSchoolContainer.appendChild(gridDiv);
-            }
-        });
+            newSchoolContainer.appendChild(gridDiv);
+        }
 
     } catch (error) {
         console.error('Error loading comparison visualization:', error);
@@ -2049,35 +1973,29 @@ async function initComparisonVisualization() {
 }
 
 // Helper function to get old-school gradient color (dark-brown to lightest brown)
-function getOldSchoolGradientColor(confidence) {
-    // Confidence: 100% = medium-dark brown (lighter for better border visibility), 0% = lightest brown
-    // Medium-dark brown: #8B6F47 (RGB: 139, 111, 71) - lighter than original dark
-    // Lightest brown: #D2B48C (RGB: 210, 180, 140)
-    const darkR = 139, darkG = 111, darkB = 71;
-    const lightR = 210, lightG = 180, lightB = 140;
-    
-    const ratio = confidence / 100; // 1.0 for 100%, 0.0 for 0%
-    const r = Math.round(darkR + (lightR - darkR) * (1 - ratio));
-    const g = Math.round(darkG + (lightG - darkG) * (1 - ratio));
-    const b = Math.round(darkB + (lightB - darkB) * (1 - ratio));
-    
-    return `rgb(${r}, ${g}, ${b})`;
+function getOldSchoolGradientColor(status) {
+    // Status-based: operating = darker brown, closed = fainter brown
+    // Dark brown: #8B6F47 (RGB: 139, 111, 71)
+    // Light brown: #D2B48C (RGB: 210, 180, 140)
+    const statusLower = (status || '').toLowerCase();
+    if (statusLower === 'operating' || statusLower === 'new') {
+        return 'rgb(139, 111, 71)'; // Darker brown for operating
+    } else {
+        return 'rgb(210, 180, 140)'; // Fainter brown for closed
+    }
 }
 
-// Helper function to get new-school gradient color (medium-dark pink to lightest pink)
-function getNewSchoolGradientColor(confidence) {
-    // Confidence: 100% = medium-dark pink (lighter for better border visibility), 0% = lightest pink
-    // Medium-dark pink: #E91E63 (RGB: 233, 30, 99) - lighter than original dark
-    // Lightest pink: #F8D7DA (RGB: 248, 215, 218)
-    const darkR = 233, darkG = 30, darkB = 99;
-    const lightR = 248, lightG = 215, lightB = 218;
-    
-    const ratio = confidence / 100; // 1.0 for 100%, 0.0 for 0%
-    const r = Math.round(darkR + (lightR - darkR) * (1 - ratio));
-    const g = Math.round(darkG + (lightG - darkG) * (1 - ratio));
-    const b = Math.round(darkB + (lightB - darkB) * (1 - ratio));
-    
-    return `rgb(${r}, ${g}, ${b})`;
+// Helper function to get new-school gradient color based on status
+function getNewSchoolGradientColor(status) {
+    // Status-based: operating = darker pink, closed = fainter pink
+    // Dark pink: #E91E63 (RGB: 233, 30, 99)
+    // Light pink: #F8D7DA (RGB: 248, 215, 218)
+    const statusLower = (status || '').toLowerCase();
+    if (statusLower === 'operating' || statusLower === 'new') {
+        return 'rgb(233, 30, 99)'; // Darker pink for operating
+    } else {
+        return 'rgb(248, 215, 218)'; // Fainter pink for closed
+    }
 }
 
 // Sankey Diagram for Turnover Flow
