@@ -1791,12 +1791,61 @@ async function initComparisonVisualization() {
                 return item.confidence > 0 && item.imageUrl && item.imageUrl.length > 0;
             })
 
-        // No longer grouping by confidence - just separate old-school and new-school
-        const oldSchoolItems = imageData.filter(d => d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
-        const newSchoolItems = imageData.filter(d => !d.isOldSchool).sort((a, b) => b.confidence - a.confidence);
+        // Group by decile (0-9%, 10-19%, 20-29%, ..., 90-99%, 100%)
+        const groupByConfidence = (items) => {
+            const groups = {};
+            items.forEach(item => {
+                const confidence = Math.round(item.confidence);
+                let confidenceLevel;
+                
+                // Special case for 100%
+                if (confidence === 100) {
+                    confidenceLevel = 100;
+                } else {
+                    // Group into deciles: 0-9, 10-19, 20-29, ..., 90-99
+                    const decile = Math.floor(confidence / 10) * 10;
+                    confidenceLevel = decile;
+                }
+                
+                if (!groups[confidenceLevel]) {
+                    groups[confidenceLevel] = [];
+                }
+                groups[confidenceLevel].push(item);
+            });
+            return groups;
+        };
+
+        const oldSchoolGroups = groupByConfidence(imageData.filter(d => d.isOldSchool));
+        const newSchoolGroups = groupByConfidence(imageData.filter(d => !d.isOldSchool));
+
+        // Get all confidence levels, sorted descending
+        const allConfidenceLevels = [...new Set([
+            ...Object.keys(oldSchoolGroups).map(Number),
+            ...Object.keys(newSchoolGroups).map(Number)
+        ])].sort((a, b) => b - a);
 
         // Create visualization structure
         container.innerHTML = `
+            <div class="comparison-legend" style="margin-bottom: 2rem; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 2rem; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="display: inline-block; width: 30px; height: 20px; background: rgb(139, 111, 71); border-radius: 4px;"></span>
+                        <span>Old-school Style (darker = operating, fainter = closed)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="display: inline-block; width: 30px; height: 20px; background: rgb(210, 180, 140); border-radius: 4px;"></span>
+                        <span>Old-school Style (closed)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="display: inline-block; width: 30px; height: 20px; background: rgb(233, 30, 99); border-radius: 4px;"></span>
+                        <span>New-school Style (darker = operating, fainter = closed)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="display: inline-block; width: 30px; height: 20px; background: rgb(248, 215, 218); border-radius: 4px;"></span>
+                        <span>New-school Style (closed)</span>
+                    </div>
+                </div>
+            </div>
             <div class="comparison-container">
                 <div class="comparison-column old-school-column">
                     <h3>Old-school</h3>
@@ -1825,12 +1874,46 @@ async function initComparisonVisualization() {
             return 'size-smallest';
         };
 
-        // Render all old-school images in a single grid
-        if (oldSchoolItems.length > 0) {
-            const gridDiv = document.createElement('div');
-            gridDiv.className = 'confidence-level-grid';
-            
-            oldSchoolItems.forEach(item => {
+        // Render each confidence level as a block
+        allConfidenceLevels.forEach(confidenceLevel => {
+            const oldSchoolItems = oldSchoolGroups[confidenceLevel] || [];
+            const newSchoolItems = newSchoolGroups[confidenceLevel] || [];
+
+            // Format confidence level label for deciles
+            const formatConfidenceLabel = (level) => {
+                if (level === 100) {
+                    return '100%';
+                } else {
+                    return `${level}-${level + 9}%`;
+                }
+            };
+
+            // Create confidence level header for old-school
+            if (oldSchoolItems.length > 0) {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'confidence-level-header';
+                headerDiv.textContent = formatConfidenceLabel(confidenceLevel);
+                oldSchoolContainer.appendChild(headerDiv);
+            }
+
+            // Create confidence level header for new-school
+            if (newSchoolItems.length > 0) {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'confidence-level-header';
+                headerDiv.textContent = formatConfidenceLabel(confidenceLevel);
+                newSchoolContainer.appendChild(headerDiv);
+            }
+
+            // Create image grid for this confidence level
+            const maxItems = Math.max(oldSchoolItems.length, newSchoolItems.length);
+            const itemsPerRow = 4; // Number of images per row
+
+            // Render old-school images in grid
+            if (oldSchoolItems.length > 0) {
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'confidence-level-grid';
+                
+                oldSchoolItems.forEach(item => {
                 const bgColor = getOldSchoolGradientColor(item.status);
                 const imgDiv = document.createElement('div');
                 const sizeClass = getSizeClass(oldSchoolItemCount);
@@ -1884,15 +1967,15 @@ async function initComparisonVisualization() {
                     gridDiv.appendChild(imgDiv);
                 });
                 
-            oldSchoolContainer.appendChild(gridDiv);
-        }
+                oldSchoolContainer.appendChild(gridDiv);
+            }
 
-        // Render all new-school images in a single grid
-        if (newSchoolItems.length > 0) {
-            const gridDiv = document.createElement('div');
-            gridDiv.className = 'confidence-level-grid';
-            
-            newSchoolItems.forEach(item => {
+            // Render new-school images in grid
+            if (newSchoolItems.length > 0) {
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'confidence-level-grid';
+                
+                newSchoolItems.forEach(item => {
                 const bgColor = getNewSchoolGradientColor(item.status);
                 const imgDiv = document.createElement('div');
                 const sizeClass = getSizeClass(newSchoolItemCount);
@@ -1959,8 +2042,9 @@ async function initComparisonVisualization() {
                     gridDiv.appendChild(imgDiv);
                 });
                 
-            newSchoolContainer.appendChild(gridDiv);
-        }
+                newSchoolContainer.appendChild(gridDiv);
+            }
+        });
 
     } catch (error) {
         console.error('Error loading comparison visualization:', error);
