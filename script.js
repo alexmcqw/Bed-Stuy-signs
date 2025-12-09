@@ -2104,8 +2104,13 @@ async function initSankeyDiagram() {
             dynamicTyping: false
         });
 
+        // Get column F (address) - column F is the 6th column (0-indexed: 5)
+        const headers = parsed.meta.fields || Object.keys(parsed.data[0] || {});
+        const columnF = headers[5]; // Column F is the 6th column (0-indexed: 5) - Address
+
         // Group rows by coordinates
         const coordinateGroups = new Map();
+        const coordinateAddresses = new Map(); // Store address for each coordinate group
         
         parsed.data.forEach(row => {
             const lat = parseFloat(row['LiveXYZSeptember132025_XYTableToPoint_entrances_main_lat']);
@@ -2121,6 +2126,12 @@ async function initSankeyDiagram() {
             
             if (!coordinateGroups.has(coordKey)) {
                 coordinateGroups.set(coordKey, []);
+            }
+
+            // Store address for this coordinate (use first non-empty address found)
+            const address = row[columnF] || row['address'] || row['Address'] || '';
+            if (address && address.trim() && !coordinateAddresses.has(coordKey)) {
+                coordinateAddresses.set(coordKey, address.trim());
             }
 
             let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
@@ -2173,10 +2184,13 @@ async function initSankeyDiagram() {
             const oldSchoolCount = businesses.filter(b => b.isOldSchool).length;
             const isOldSchoolDominant = oldSchoolCount >= businesses.length / 2;
             
+            // Get address for this location, or fallback to location number
+            const address = coordinateAddresses.get(coordKey) || `Location ${idx + 1}`;
+            
             const nodeId = `location-${idx}`;
             nodeMap.set(nodeId, {
                 id: nodeId,
-                name: `Location ${idx + 1}`,
+                name: address,
                 type: 'location',
                 isOldSchool: isOldSchoolDominant,
                 businessCount: businesses.length
