@@ -1162,16 +1162,29 @@ async function initTimeline() {
                                 circle.addEventListener('mouseenter', () => {
                                     tooltip.style.display = 'block';
                                     const rect = circle.getBoundingClientRect();
-                                    tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
-                                    tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+                                    // Position tooltip to the right of the dot, vertically centered
+                                    tooltip.style.left = (rect.right + 10) + 'px';
+                                    tooltip.style.top = (rect.top + rect.height / 2 - tooltip.offsetHeight / 2) + 'px';
                                     
-                                    // Adjust if tooltip goes off screen
+                                    // Adjust if tooltip goes off screen to the right
+                                    const maxLeft = window.innerWidth - tooltip.offsetWidth - 10;
+                                    if (parseFloat(tooltip.style.left) > maxLeft) {
+                                        // Position to the left of the dot instead
+                                        tooltip.style.left = (rect.left - tooltip.offsetWidth - 10) + 'px';
+                                    }
+                                    
+                                    // Adjust if tooltip goes off screen to the left
                                     if (parseFloat(tooltip.style.left) < 10) {
                                         tooltip.style.left = '10px';
                                     }
-                                    const maxLeft = window.innerWidth - tooltip.offsetWidth - 10;
-                                    if (parseFloat(tooltip.style.left) > maxLeft) {
-                                        tooltip.style.left = maxLeft + 'px';
+                                    
+                                    // Adjust if tooltip goes off screen vertically
+                                    if (parseFloat(tooltip.style.top) < 10) {
+                                        tooltip.style.top = '10px';
+                                    }
+                                    const maxTop = window.innerHeight - tooltip.offsetHeight - 10;
+                                    if (parseFloat(tooltip.style.top) > maxTop) {
+                                        tooltip.style.top = maxTop + 'px';
                                     }
                                 });
                                 
