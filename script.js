@@ -832,6 +832,11 @@ async function initTimeline() {
             const columnAE = headers[30]; // Column AE is the 31st column (0-indexed: 30)
             const photoUrl = row[columnAE] || row['Photo_URL'] || '';
 
+            // Skip if no image link
+            if (!photoUrl || photoUrl.trim() === '') {
+                return;
+            }
+
             // Determine actual dates
             const actualStartDate = startDate || new Date(0);
             const actualEndDate = endDate || now;
