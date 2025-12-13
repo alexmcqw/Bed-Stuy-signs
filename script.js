@@ -2175,194 +2175,230 @@ async function initSankeyDiagram() {
             });
         });
 
-        // Build nodes and links
-        const nodes = [];
-        const links = [];
-        const nodeMap = new Map();
-
+        // Build parallel sets structure
         // Define 5 phases
         const phases = ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5'];
-
-        // Add location nodes (left side)
-        multiBusinessGroups.forEach(([coordKey, businesses], idx) => {
-            // Determine dominant typography
-            const oldSchoolCount = businesses.filter(b => b.isOldSchool).length;
-            const isOldSchoolDominant = oldSchoolCount >= businesses.length / 2;
-            
-            // Get address for this location, or fallback to location number
-            const address = coordinateAddresses.get(coordKey) || `Location ${idx + 1}`;
-            
-            const nodeId = `location-${idx}`;
-            nodeMap.set(nodeId, {
-                id: nodeId,
-                name: address,
-                type: 'location',
-                isOldSchool: isOldSchoolDominant,
-                businessCount: businesses.length
-            });
-            nodes.push(nodeMap.get(nodeId));
-        });
-
-        // Add phase nodes (5 columns)
-        phases.forEach((phaseName, phaseIdx) => {
-            const nodeId = `phase-${phaseIdx}`;
-            nodeMap.set(nodeId, {
-                id: nodeId,
-                name: phaseName,
-                type: 'phase',
-                index: phaseIdx
-            });
-            nodes.push(nodeMap.get(nodeId));
-        });
-
-        // Create links from locations to phases based on business order
-        // Store business data with each location for link rendering
-        const locationBusinessData = new Map();
+        
+        // For each phase, collect businesses and organize by old-school (top) / new-school (bottom)
+        const phaseBusinesses = phases.map(() => ({ oldSchool: [], newSchool: [] }));
+        
+        // Track business sequences for linking
+        const businessSequences = [];
+        const businessIdMap = new Map(); // Map to track businesses by unique ID
         
         multiBusinessGroups.forEach(([coordKey, businesses], locationIdx) => {
-            const businessLinks = [];
+            const address = coordinateAddresses.get(coordKey) || `Location ${locationIdx + 1}`;
+            const sequence = [];
+            
             businesses.forEach((business, businessOrder) => {
-                // businessOrder is 0-indexed, so add 1 to get phase number (1-5)
-                const phaseNumber = businessOrder + 1;
+                const phaseNumber = businessOrder; // 0-indexed phase (0-4)
                 
-                // Only create links for phases 1-5
-                if (phaseNumber <= 5) {
-                    const sourceId = `location-${locationIdx}`;
-                    const targetId = `phase-${phaseNumber - 1}`; // phaseIdx is 0-indexed
-                    
-                    // Create a separate link for each business (don't aggregate)
-                    links.push({
-                        source: sourceId,
-                        target: targetId,
-                        value: 1,
-                        isOldSchool: business.isOldSchool,
-                        businessOrder: businessOrder,
-                        locationIdx: locationIdx
-                    });
-                    
-                    businessLinks.push({
-                        phaseNumber: phaseNumber - 1, // 0-indexed phase
+                // Only process phases 1-5
+                if (phaseNumber < 5) {
+                    const businessId = `${locationIdx}-${businessOrder}`;
+                    const businessData = {
+                        id: businessId,
+                        locationIdx: locationIdx,
+                        address: address,
+                        phaseNumber: phaseNumber,
                         isOldSchool: business.isOldSchool,
                         businessOrder: businessOrder
-                    });
+                    };
+                    
+                    businessIdMap.set(businessId, businessData);
+                    
+                    // Add to appropriate phase group
+                    if (business.isOldSchool) {
+                        phaseBusinesses[phaseNumber].oldSchool.push(businessData);
+                    } else {
+                        phaseBusinesses[phaseNumber].newSchool.push(businessData);
+                    }
+                    
+                    sequence.push(businessData);
                 }
             });
-            locationBusinessData.set(locationIdx, businessLinks);
+            
+            if (sequence.length > 0) {
+                businessSequences.push(sequence);
+            }
+        });
+        
+        // Calculate positions for each phase column
+        const phasePositions = phaseBusinesses.map((phase, phaseIdx) => {
+            const oldSchoolCount = phase.oldSchool.length;
+            const newSchoolCount = phase.newSchool.length;
+            const totalCount = oldSchoolCount + newSchoolCount;
+            
+            // Calculate positions: old-school at top, new-school at bottom
+            const positions = new Map();
+            
+            // Position old-school businesses (top) - index 0 to oldSchoolCount-1
+            phase.oldSchool.forEach((business, idx) => {
+                positions.set(business.id, {
+                    business: business,
+                    yIndex: idx, // Position within old-school group
+                    height: 1,
+                    phaseIdx: phaseIdx,
+                    isOldSchool: true,
+                    groupIndex: idx
+                });
+            });
+            
+            // Position new-school businesses (bottom) - index oldSchoolCount to totalCount-1
+            phase.newSchool.forEach((business, idx) => {
+                positions.set(business.id, {
+                    business: business,
+                    yIndex: oldSchoolCount + idx, // Position within entire column
+                    height: 1,
+                    phaseIdx: phaseIdx,
+                    isOldSchool: false,
+                    groupIndex: idx
+                });
+            });
+            
+            return {
+                positions: positions,
+                oldSchoolCount: oldSchoolCount,
+                newSchoolCount: newSchoolCount,
+                totalCount: totalCount,
+                oldSchool: phase.oldSchool,
+                newSchool: phase.newSchool
+            };
+        });
+        
+        // Create links between consecutive phases
+        const links = [];
+        businessSequences.forEach(sequence => {
+            for (let i = 0; i < sequence.length - 1; i++) {
+                const sourceBusiness = sequence[i];
+                const targetBusiness = sequence[i + 1];
+                
+                const sourcePos = phasePositions[sourceBusiness.phaseNumber].positions.get(sourceBusiness.id);
+                const targetPos = phasePositions[targetBusiness.phaseNumber].positions.get(targetBusiness.id);
+                
+                if (sourcePos && targetPos) {
+                    links.push({
+                        source: sourceBusiness,
+                        target: targetBusiness,
+                        sourcePos: sourcePos,
+                        targetPos: targetPos,
+                        isOldSchool: sourceBusiness.isOldSchool // Color based on source
+                    });
+                }
+            }
         });
 
-        // Render Sankey diagram using D3.js
-        const width = Math.max(1400, sankeyContainer.offsetWidth || 1400);
-        const height = Math.max(600, multiBusinessGroups.length * 15 + 200);
-
+        // Render parallel sets diagram
+        const maxCount = Math.max(...phasePositions.map(p => p.totalCount));
+        const nodeHeight = 12;
+        const nodeSpacing = 2;
+        const linkWidth = 100;
+        
+        const leftMargin = 50;
+        const rightMargin = 50;
+        const topMargin = 80;
+        const columnWidth = 200;
+        const columnSpacing = 50;
+        
+        const width = leftMargin + rightMargin + (phases.length * (columnWidth + columnSpacing));
+        const height = topMargin + (maxCount * (nodeHeight + nodeSpacing)) + 100;
+        
         sankeyContainer.innerHTML = '';
         const svg = d3.select('#sankey-diagram')
             .append('svg')
             .attr('width', width)
             .attr('height', height);
 
-        // Create a simple flow diagram (custom Sankey-like visualization)
-        const locationNodes = nodes.filter(n => n.type === 'location');
-        const phaseNodes = nodes.filter(n => n.type === 'phase');
+        // Calculate scale for positioning businesses within each column
+        const getYPosition = (position, phaseTotal) => {
+            // Use yIndex to position businesses sequentially
+            return topMargin + (position.yIndex * (nodeHeight + nodeSpacing));
+        };
 
-        const leftMargin = 50;
-        const rightMargin = 50;
-        const topMargin = 50;
-        const nodeHeight = 15;
-        const nodeSpacing = 5;
-        const leftX = leftMargin;
-        const columnWidth = (width - leftMargin - rightMargin - 150) / 5; // Divide remaining space into 5 columns
-        const columnSpacing = columnWidth;
-
-        // Draw location nodes (left)
-        locationNodes.forEach((node, i) => {
-            const y = topMargin + i * (nodeHeight + nodeSpacing);
-            const color = node.isOldSchool ? '#8B6F47' : '#E91E63';
+        // Draw phase columns and businesses
+        phases.forEach((phaseName, phaseIdx) => {
+            const phaseX = leftMargin + phaseIdx * (columnWidth + columnSpacing);
+            const phaseData = phasePositions[phaseIdx];
             
-            svg.append('rect')
-                .attr('x', leftX)
-                .attr('y', y)
-                .attr('width', 150)
-                .attr('height', nodeHeight)
-                .attr('fill', color)
-                .attr('stroke', '#fff')
-                .attr('stroke-width', 1);
-
+            // Draw phase label
             svg.append('text')
-                .attr('x', leftX + 5)
-                .attr('y', y + nodeHeight / 2)
-                .attr('dy', '0.35em')
-                .attr('fill', '#fff')
-                .attr('font-size', '10px')
-                .text(`${node.name} (${node.businessCount})`);
+                .attr('x', phaseX + columnWidth / 2)
+                .attr('y', topMargin - 20)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '14px')
+                .attr('font-weight', 'bold')
+                .attr('fill', '#1e293b')
+                .text(phaseName);
+            
+            // Draw old-school businesses (brown, at top)
+            phaseData.oldSchool.forEach(business => {
+                const pos = phaseData.positions.get(business.id);
+                if (pos) {
+                    const y = getYPosition(pos, phaseData.totalCount);
+                    const color = '#8B6F47';
+                    
+                    svg.append('rect')
+                        .attr('x', phaseX)
+                        .attr('y', y)
+                        .attr('width', columnWidth)
+                        .attr('height', nodeHeight)
+                        .attr('fill', color)
+                        .attr('stroke', '#fff')
+                        .attr('stroke-width', 1)
+                        .attr('rx', 2);
+                }
+            });
+            
+            // Draw new-school businesses (pink, at bottom)
+            phaseData.newSchool.forEach(business => {
+                const pos = phaseData.positions.get(business.id);
+                if (pos) {
+                    const y = getYPosition(pos, phaseData.totalCount);
+                    const color = '#E91E63';
+                    
+                    svg.append('rect')
+                        .attr('x', phaseX)
+                        .attr('y', y)
+                        .attr('width', columnWidth)
+                        .attr('height', nodeHeight)
+                        .attr('fill', color)
+                        .attr('stroke', '#fff')
+                        .attr('stroke-width', 1)
+                        .attr('rx', 2);
+                }
+            });
         });
 
-        // Draw phase nodes (5 columns)
-        phaseNodes.forEach((node, phaseIdx) => {
-            const phaseX = leftX + 150 + phaseIdx * columnSpacing + 20; // Start after location column, add spacing
-            const phaseY = topMargin; // All phases at the top
-            
-            svg.append('rect')
-                .attr('x', phaseX)
-                .attr('y', phaseY)
-                .attr('width', 100)
-                .attr('height', nodeHeight)
-                .attr('fill', '#94a3b8')
-                .attr('stroke', '#fff')
-                .attr('stroke-width', 1);
-
-            svg.append('text')
-                .attr('x', phaseX + 5)
-                .attr('y', phaseY + nodeHeight / 2)
-                .attr('dy', '0.35em')
-                .attr('fill', '#fff')
-                .attr('font-size', '10px')
-                .text(node.name);
-        });
-
-        // Draw links - connect from locations to phase columns
-        // Group links by location to handle potential overlaps
-        const linksByLocation = new Map();
+        // Draw links between phases
         links.forEach(link => {
-            const locationIdx = link.locationIdx;
-            if (!linksByLocation.has(locationIdx)) {
-                linksByLocation.set(locationIdx, []);
-            }
-            linksByLocation.get(locationIdx).push(link);
-        });
-        
-        // Draw each link with correct color and slight offset if needed
-        links.forEach((d, linkIdx) => {
-            const sourceNode = nodeMap.get(d.source);
-            const targetNode = nodeMap.get(d.target);
-            const sourceIdx = locationNodes.indexOf(sourceNode);
-            const targetPhaseIdx = targetNode.index;
+            const sourcePhaseIdx = link.source.phaseNumber;
+            const targetPhaseIdx = link.target.phaseNumber;
             
-            const baseY = topMargin + sourceIdx * (nodeHeight + nodeSpacing) + nodeHeight / 2;
+            const sourceX = leftMargin + sourcePhaseIdx * (columnWidth + columnSpacing) + columnWidth;
+            const targetX = leftMargin + targetPhaseIdx * (columnWidth + columnSpacing);
             
-            // Add slight vertical offset for links from same location to same phase (if any)
-            // This helps distinguish overlapping links
-            const linksAtSameLocation = linksByLocation.get(d.locationIdx) || [];
-            const linksToSamePhase = linksAtSameLocation.filter(l => 
-                nodeMap.get(l.target).index === targetPhaseIdx
-            );
-            const offsetIndex = linksToSamePhase.indexOf(d);
-            const verticalOffset = (offsetIndex - (linksToSamePhase.length - 1) / 2) * 2; // Small offset
+            const sourcePhaseTotal = phasePositions[sourcePhaseIdx].totalCount;
+            const targetPhaseTotal = phasePositions[targetPhaseIdx].totalCount;
             
-            const sourceY = baseY + verticalOffset;
-            const targetX = leftX + 150 + targetPhaseIdx * columnSpacing + 20 + 50; // Center of phase column
-            const targetY = sourceY; // Keep same vertical position as source
+            const sourceY = getYPosition(link.sourcePos, sourcePhaseTotal) + nodeHeight / 2;
+            const targetY = getYPosition(link.targetPos, targetPhaseTotal) + nodeHeight / 2;
             
-            const midX = (leftX + 150 + targetX) / 2;
+            // Create curved path for the link
+            const midX1 = sourceX + (targetX - sourceX) * 0.3;
+            const midX2 = sourceX + (targetX - sourceX) * 0.7;
             
-            const pathData = `M ${leftX + 150} ${sourceY} C ${midX} ${sourceY}, ${midX} ${targetY}, ${targetX} ${targetY}`;
+            const pathData = `M ${sourceX} ${sourceY} C ${midX1} ${sourceY}, ${midX2} ${targetY}, ${targetX} ${targetY}`;
+            
+            const linkColor = link.isOldSchool ? '#8B6F47' : '#E91E63';
             
             svg.append('path')
                 .attr('d', pathData)
                 .attr('fill', 'none')
-                .attr('stroke', d.isOldSchool ? '#8B6F47' : '#E91E63')
+                .attr('stroke', linkColor)
                 .attr('stroke-width', 2)
-                .attr('stroke-opacity', 0.7)
-                .attr('stroke-linecap', 'round');
+                .attr('stroke-opacity', 0.6)
+                .attr('stroke-linecap', 'round')
+                .style('pointer-events', 'none');
         });
 
     } catch (error) {
