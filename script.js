@@ -1830,7 +1830,7 @@ async function initComparisonVisualization() {
                 <div style="display: flex; flex-wrap: wrap; gap: 2rem; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span style="display: inline-block; width: 30px; height: 20px; background: rgb(139, 111, 71); border-radius: 4px;"></span>
-                        <span>Old-school Style (darker = operating, fainter = closed)</span>
+                        <span>Old-school Style (new business)</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span style="display: inline-block; width: 30px; height: 20px; background: rgb(210, 180, 140); border-radius: 4px;"></span>
@@ -1838,7 +1838,7 @@ async function initComparisonVisualization() {
                     </div>
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span style="display: inline-block; width: 30px; height: 20px; background: rgb(233, 30, 99); border-radius: 4px;"></span>
-                        <span>New-school Style (darker = operating, fainter = closed)</span>
+                        <span>New-school Style (new business)</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span style="display: inline-block; width: 30px; height: 20px; background: rgb(248, 215, 218); border-radius: 4px;"></span>
