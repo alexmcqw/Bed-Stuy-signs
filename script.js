@@ -111,7 +111,7 @@ function initAnnotations() {
     document.querySelectorAll('#annotations1 .annotation')[0].style.left = '70%';
     addAnnotation('annotations1', 'Photography, visible products', 'right', 45, 10, 72, false);
     document.querySelectorAll('#annotations1 .annotation')[1].style.left = '61%';
-    addAnnotation('annotations1', 'Lots of color', 'left', 75, 55, 49, false);
+    addAnnotation('annotations1', 'Colorful imagery', 'left', 75, 55, 49, false);
     document.querySelectorAll('#annotations1 .annotation')[2].style.left = '28%';
 
     // Annotations for second image (storefront1.jpeg) - no arrows
