@@ -111,10 +111,10 @@ function initAnnotations() {
     document.querySelectorAll('#annotations1 .annotation')[0].style.left = '70%';
     addAnnotation('annotations1', 'Vinyl & plastic materiality', 'right', 45, 10, 72, false);
     document.querySelectorAll('#annotations1 .annotation')[1].style.left = '61%';
-    addAnnotation('annotations1', 'Colorful imagery', 'left', 75, 55, 49, false);
-    document.querySelectorAll('#annotations1 .annotation')[2].style.left = '28%';
-    addAnnotation('annotations1', 'Wordy list of offerings', 'left', 50, 50, 50, false);
-    document.querySelectorAll('#annotations1 .annotation')[3].style.left = '50%';
+    addAnnotation('annotations1', 'Colorful imagery', 'left', 48, 54, 42, false);
+    document.querySelectorAll('#annotations1 .annotation')[2].style.left = '6%';
+    addAnnotation('annotations1', 'Wordy list of offerings', 'left', 50, 50, 53, false);
+    document.querySelectorAll('#annotations1 .annotation')[3].style.left = '32%';
 
     // Annotations for second image (storefront1.jpeg) - no arrows
     addAnnotation('annotations2', 'Minimal text', 'right', 45, 30, 57, false);
