@@ -103,22 +103,26 @@ function addAnnotation(containerId, label, side, targetX, targetY, labelY, showA
 // Initialize annotations when page loads
 // Updated: 2024-12-07
 function initAnnotations() {
-    // Example annotations - you can customize these
-    // Format: addAnnotation(containerId, label, side, targetX%, targetY%, labelY%)
-    // side: 'left' or 'right' - which side of the image the label should be on
-    // targetX, targetY: position in the image where the arrow should point (percentages)
-    // labelY: vertical position of the label (percentage)
-    
+    // Format: addAnnotation(containerId, label, side, targetX%, targetY%, labelY%, showArrow)
+    // After creating annotations, update their horizontal positions if needed
+
     // Annotations for first image (storefront2.jpg) - no arrows
-    addAnnotation('annotations1', 'Large, clear signage', 'left', 50, 15, 15, false);
-    addAnnotation('annotations1', 'Photography, visible products', 'right', 45, 10, 35, false);
-    addAnnotation('annotations1', 'Lots of color', 'left', 75, 55, 40, false);
-    
+    addAnnotation('annotations1', 'Large, clear signage', 'left', 50, 15, 23, false);
+    document.querySelectorAll('#annotations1 .annotation')[0].style.left = '70%';
+    addAnnotation('annotations1', 'Photography, visible products', 'right', 45, 10, 72, false);
+    document.querySelectorAll('#annotations1 .annotation')[1].style.left = '61%';
+    addAnnotation('annotations1', 'Lots of color', 'left', 75, 55, 49, false);
+    document.querySelectorAll('#annotations1 .annotation')[2].style.left = '28%';
+
     // Annotations for second image (storefront1.jpeg) - no arrows
-    addAnnotation('annotations2', 'Minimal text', 'right', 45, 30, 25, false);
-    addAnnotation('annotations2', 'Restrained use of color', 'left', 50, 55, 50, false);
-    addAnnotation('annotations2', 'Lots of glass', 'right', 20, 80, 75, false);
-    addAnnotation('annotations2', 'Vague naming/offerings', 'left', 20, 65, 65, false);
+    addAnnotation('annotations2', 'Minimal text', 'right', 45, 30, 57, false);
+    document.querySelectorAll('#annotations2 .annotation')[0].style.left = '76%';
+    addAnnotation('annotations2', 'Restrained use of color', 'left', 50, 55, 25, false);
+    document.querySelectorAll('#annotations2 .annotation')[1].style.left = '7%';
+    addAnnotation('annotations2', 'Lots of glass', 'right', 20, 80, 37, false);
+    document.querySelectorAll('#annotations2 .annotation')[2].style.left = '60%';
+    addAnnotation('annotations2', 'Vague naming/offerings', 'left', 20, 65, 58, false);
+    document.querySelectorAll('#annotations2 .annotation')[3].style.left = '15%';
 }
 
 // Tab Navigation
