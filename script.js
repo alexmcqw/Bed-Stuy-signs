@@ -109,7 +109,7 @@ function initAnnotations() {
     // Annotations for first image (storefront2.jpg) - no arrows
     addAnnotation('annotations1', 'Large, clear signage', 'left', 50, 15, 23, false);
     document.querySelectorAll('#annotations1 .annotation')[0].style.left = '70%';
-    addAnnotation('annotations1', 'Photography, visible products', 'right', 45, 10, 72, false);
+    addAnnotation('annotations1', 'Vinyl & plastic materiality', 'right', 45, 10, 72, false);
     document.querySelectorAll('#annotations1 .annotation')[1].style.left = '61%';
     addAnnotation('annotations1', 'Colorful imagery', 'left', 75, 55, 49, false);
     document.querySelectorAll('#annotations1 .annotation')[2].style.left = '28%';
@@ -121,7 +121,7 @@ function initAnnotations() {
     document.querySelectorAll('#annotations2 .annotation')[0].style.left = '76%';
     addAnnotation('annotations2', 'Restrained use of color', 'left', 50, 55, 25, false);
     document.querySelectorAll('#annotations2 .annotation')[1].style.left = '7%';
-    addAnnotation('annotations2', 'Lots of glass', 'right', 20, 80, 37, false);
+    addAnnotation('annotations2', 'Glassy materiality', 'right', 20, 80, 37, false);
     document.querySelectorAll('#annotations2 .annotation')[2].style.left = '60%';
     addAnnotation('annotations2', 'Vague naming/offerings', 'left', 20, 65, 58, false);
     document.querySelectorAll('#annotations2 .annotation')[3].style.left = '15%';

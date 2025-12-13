@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annotation Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .instructions p {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        .images-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .image-section {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fafafa;
+        }
+        
+        .image-section h2 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        .image-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .annotation {
+            position: absolute;
+            cursor: move;
+            z-index: 10;
+            user-select: none;
+        }
+        
+        .annotation-label {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            padding: 8px 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            white-space: nowrap;
+        }
+        
+        .annotation.left {
+            text-align: right;
+        }
+        
+        .annotation.right {
+            text-align: left;
+        }
+        
+        .annotation.dragging {
+            opacity: 0.7;
+            z-index: 100;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .control-group button {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        
+        .control-group button:hover {
+            background: #5568d3;
+        }
+        
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1e293b;
+            border-radius: 6px;
+            color: #e2e8f0;
+        }
+        
+        .output h3 {
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .output code {
+            display: block;
+            padding: 15px;
+            background: #0f172a;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre;
+        }
+        
+        .copy-button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .copy-button:hover {
+            background: #059669;
+        }
+        
+        .annotation-info {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            font-size: 11px;
+            color: #666;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 6px;
+            border-radius: 3px;
+            pointer-events: none;
+        }
+        
+        .target-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #10b981;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.2);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        .image-wrapper {
+            cursor: crosshair;
+        }
+        
+        .image-wrapper.selecting {
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Annotation Position Editor</h1>
+        
+        <div class="instructions">
+            <p><strong>How to use:</strong></p>
+            <p>1. <strong>Click an annotation</strong> to select it (green border)</p>
+            <p>2. <strong>Drag the annotation label</strong> to change its position (both horizontal and vertical)</p>
+            <p>3. <strong>Click on the image</strong> to set where the arrow points (targetX, targetY) - works when an annotation is selected</p>
+            <p>4. Use the controls below to edit text, side, and positions manually</p>
+            <p>5. Click "Generate Code" to create the updated JavaScript code</p>
+            <p>6. Copy the code and replace the <code>initAnnotations()</code> function in script.js</p>
+            <p><strong>Horizontal positioning:</strong> X values: negative = left of image, 0-100 = on image, >100 = right of image</p>
+        </div>
+        
+        <div class="images-container">
+            <div class="image-section">
+                <h2>Image 1 (annotations1)</h2>
+                <div class="image-wrapper" id="img1-wrapper" data-container-id="annotations1">
+                    <img src="https://calendre.imgix.net/EccfRS6wTMe7Yd9bM4wL_image.jpg" alt="Storefront 2" id="img1">
+                    <div class="annotations" id="annotations1"></div>
+                    <div class="target-marker" id="target-marker-1" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <div class="image-section">
+                <h2>Image 2 (annotations2)</h2>
+                <div class="image-wrapper" id="img2-wrapper" data-container-id="annotations2">
+                    <img src="https://calendre.imgix.net/1ff414b3-fafd-48a8-9e7c-40760ed10477_image.png" alt="Storefront 1" id="img2">
+                    <div class="annotations" id="annotations2"></div>
+                    <div class="target-marker" id="target-marker-2" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Selected Annotation:</label>
+                <select id="annotation-select">
+                    <option value="">Select an annotation...</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Label Text:</label>
+                <input type="text" id="label-text" placeholder="Annotation text">
+            </div>
+            
+            <div class="control-group">
+                <label>Side:</label>
+                <select id="annotation-side">
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Label Position (drag annotation to adjust, or enter manually):</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span>X:</span>
+                    <input type="number" id="label-x" placeholder="X %" min="-50" max="150" step="1" style="width: 100px;">
+                    <span>Y:</span>
+                    <input type="number" id="label-y" placeholder="Y %" min="0" max="100" step="1" style="width: 100px;">
+                    <button onclick="updateLabelPosition()">Update Label</button>
+                </div>
+                <small style="color: #666; margin-top: 5px; display: block;">X: -50 to 150 (negative = left of image, >100 = right of image)</small>
+            </div>
+            
+            <div class="control-group">
+                <label>Target Position (click on image to set):</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="target-x" placeholder="X %" min="0" max="100" step="1" style="width: 100px;">
+                    <input type="number" id="target-y" placeholder="Y %" min="0" max="100" step="1" style="width: 100px;">
+                    <button onclick="updateTargetPosition()">Update Target</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <button onclick="updateSelectedAnnotation()">Update Selected</button>
+                <button onclick="generateCode()">Generate Code</button>
+                <button onclick="resetPositions()">Reset to Default</button>
+            </div>
+        </div>
+        
+        <div class="output" id="output" style="display: none;">
+            <h3>Generated Code:</h3>
+            <code id="generated-code"></code>
+            <button class="copy-button" onclick="copyCode()">Copy Code</button>
+        </div>
+    </div>
+
+    <script>
+        // Annotation data
+        // labelX: horizontal offset from the side (-15 for left means 15% to the left of image, 115 for right means 15% to the right)
+        const annotations = {
+            annotations1: [
+                { label: 'Large, clear signage', side: 'left', targetX: 50, targetY: 15, labelY: 23, labelX: 70 },
+                { label: 'Vinyl & plastic materiality', side: 'right', targetX: 45, targetY: 10, labelY: 72, labelX: 61 },
+                { label: 'Colorful imagery', side: 'left', targetX: 75, targetY: 55, labelY: 49, labelX: 28 },
+                { label: 'Wordy list of offerings', side: 'left', targetX: 50, targetY: 50, labelY: 50, labelX: 50 }
+            ],
+            annotations2: [
+                { label: 'Minimal text', side: 'right', targetX: 45, targetY: 30, labelY: 57, labelX: 76 },
+                { label: 'Restrained use of color', side: 'left', targetX: 50, targetY: 55, labelY: 25, labelX: 7 },
+                { label: 'Glassy materiality', side: 'right', targetX: 20, targetY: 80, labelY: 37, labelX: 60 },
+                { label: 'Vague naming/offerings', side: 'left', targetX: 20, targetY: 65, labelY: 58, labelX: 15 }
+            ]
+        };
+        
+        let dragging = null;
+        let dragOffset = { x: 0, y: 0 };
+        let selectedAnnotation = null;
+        
+        // Initialize annotations
+        function initAnnotations() {
+            Object.keys(annotations).forEach(containerId => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+                
+                annotations[containerId].forEach((ann, index) => {
+                    createAnnotation(containerId, ann, index);
+                });
+            });
+            
+            updateSelectOptions();
+        }
+        
+        function createAnnotation(containerId, ann, index) {
+            const container = document.getElementById(containerId);
+            const wrapper = container.parentElement;
+            const img = wrapper.querySelector('img');
+            
+            const annotation = document.createElement('div');
+            annotation.className = `annotation ${ann.side}`;
+            annotation.dataset.containerId = containerId;
+            annotation.dataset.index = index;
+            
+            // Position label horizontally (labelX is percentage from left edge of wrapper)
+            annotation.style.left = `${ann.labelX || (ann.side === 'left' ? -15 : 115)}%`;
+            annotation.style.top = `${ann.labelY}%`;
+            annotation.style.transform = 'translateY(-50%)';
+            
+            const label = document.createElement('div');
+            label.className = 'annotation-label';
+            label.textContent = ann.label;
+            annotation.appendChild(label);
+            
+            // Add info badge
+            const info = document.createElement('div');
+            info.className = 'annotation-info';
+            info.textContent = `Target: ${Math.round(ann.targetX)}%, ${Math.round(ann.targetY)}% | Label: ${Math.round(ann.labelX || (ann.side === 'left' ? -15 : 115))}%, ${Math.round(ann.labelY)}%`;
+            annotation.appendChild(info);
+            
+            // Make draggable (both horizontal and vertical)
+            annotation.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                dragging = { containerId, index, type: 'label' };
+                const wrapperRect = wrapper.getBoundingClientRect();
+                const annotationRect = annotation.getBoundingClientRect();
+                dragOffset.x = e.clientX - wrapperRect.left - (annotationRect.left - wrapperRect.left);
+                dragOffset.y = e.clientY - wrapperRect.top - (annotationRect.top - wrapperRect.top);
+                annotation.classList.add('dragging');
+            });
+            
+            annotation.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectAnnotation(containerId, index);
+            });
+            
+            container.appendChild(annotation);
+        }
+        
+        // Handle image clicks to set target position
+        document.querySelectorAll('.image-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', (e) => {
+                if (!selectedAnnotation) return;
+                if (e.target.tagName === 'IMG') {
+                    const containerId = wrapper.dataset.containerId;
+                    if (containerId !== selectedAnnotation.containerId) return;
+                    
+                    const img = e.target;
+                    const rect = img.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    
+                    const { index } = selectedAnnotation;
+                    annotations[containerId][index].targetX = x;
+                    annotations[containerId][index].targetY = y;
+                    
+                    // Show marker
+                    const markerId = `target-marker-${containerId === 'annotations1' ? '1' : '2'}`;
+                    const marker = document.getElementById(markerId);
+                    if (marker) {
+                        marker.style.display = 'block';
+                        marker.style.left = `${x}%`;
+                        marker.style.top = `${y}%`;
+                    }
+                    
+                    // Update annotation display
+                    initAnnotations();
+                    selectAnnotation(containerId, index);
+                }
+            });
+        });
+        
+        function selectAnnotation(containerId, index) {
+            selectedAnnotation = { containerId, index };
+            const ann = annotations[containerId][index];
+            
+            document.getElementById('annotation-select').value = `${containerId}-${index}`;
+            document.getElementById('label-text').value = ann.label;
+            document.getElementById('annotation-side').value = ann.side;
+            document.getElementById('label-x').value = Math.round(ann.labelX || (ann.side === 'left' ? -15 : 115));
+            document.getElementById('label-y').value = Math.round(ann.labelY);
+            document.getElementById('target-x').value = Math.round(ann.targetX);
+            document.getElementById('target-y').value = Math.round(ann.targetY);
+            
+            // Highlight selected
+            document.querySelectorAll('.annotation').forEach(el => {
+                el.style.border = 'none';
+            });
+            const selectedEl = document.querySelector(`[data-container-id="${containerId}"][data-index="${index}"]`);
+            if (selectedEl) {
+                selectedEl.style.border = '3px solid #10b981';
+            }
+            
+            // Show target marker
+            const markerId = `target-marker-${containerId === 'annotations1' ? '1' : '2'}`;
+            const marker = document.getElementById(markerId);
+            const wrapper = document.getElementById(containerId).parentElement;
+            if (marker && wrapper) {
+                marker.style.display = 'block';
+                marker.style.left = `${ann.targetX}%`;
+                marker.style.top = `${ann.targetY}%`;
+            }
+        }
+        
+        function updateLabelPosition() {
+            if (!selectedAnnotation) {
+                alert('Please select an annotation first');
+                return;
+            }
+            
+            const { containerId, index } = selectedAnnotation;
+            const labelX = parseFloat(document.getElementById('label-x').value);
+            const labelY = parseFloat(document.getElementById('label-y').value);
+            
+            if (isNaN(labelX) || isNaN(labelY)) {
+                alert('Please enter valid numbers for label position');
+                return;
+            }
+            
+            annotations[containerId][index].labelX = labelX;
+            annotations[containerId][index].labelY = Math.max(0, Math.min(100, labelY));
+            
+            initAnnotations();
+            selectAnnotation(containerId, index);
+        }
+        
+        function updateTargetPosition() {
+            if (!selectedAnnotation) {
+                alert('Please select an annotation first');
+                return;
+            }
+            
+            const { containerId, index } = selectedAnnotation;
+            const targetX = parseFloat(document.getElementById('target-x').value);
+            const targetY = parseFloat(document.getElementById('target-y').value);
+            
+            if (isNaN(targetX) || isNaN(targetY)) {
+                alert('Please enter valid numbers for target position');
+                return;
+            }
+            
+            annotations[containerId][index].targetX = Math.max(0, Math.min(100, targetX));
+            annotations[containerId][index].targetY = Math.max(0, Math.min(100, targetY));
+            
+            // Update marker
+            const markerId = `target-marker-${containerId === 'annotations1' ? '1' : '2'}`;
+            const marker = document.getElementById(markerId);
+            if (marker) {
+                marker.style.left = `${annotations[containerId][index].targetX}%`;
+                marker.style.top = `${annotations[containerId][index].targetY}%`;
+            }
+            
+            initAnnotations();
+            selectAnnotation(containerId, index);
+        }
+        
+        function updateSelectOptions() {
+            const select = document.getElementById('annotation-select');
+            select.innerHTML = '<option value="">Select an annotation...</option>';
+            
+            Object.keys(annotations).forEach(containerId => {
+                annotations[containerId].forEach((ann, index) => {
+                    const option = document.createElement('option');
+                    option.value = `${containerId}-${index}`;
+                    option.textContent = `${containerId}: ${ann.label}`;
+                    select.appendChild(option);
+                });
+            });
+            
+            select.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    const [containerId, index] = e.target.value.split('-');
+                    selectAnnotation(containerId, parseInt(index));
+                }
+            });
+        }
+        
+        function updateSelectedAnnotation() {
+            if (!selectedAnnotation) {
+                alert('Please select an annotation first');
+                return;
+            }
+            
+            const { containerId, index } = selectedAnnotation;
+            const ann = annotations[containerId][index];
+            
+            ann.label = document.getElementById('label-text').value;
+            ann.side = document.getElementById('annotation-side').value;
+            
+            initAnnotations();
+            selectAnnotation(containerId, index);
+        }
+        
+        function resetPositions() {
+            annotations.annotations1 = [
+                { label: 'Large, clear signage', side: 'left', targetX: 50, targetY: 15, labelY: 23, labelX: 70 },
+                { label: 'Vinyl & plastic materiality', side: 'right', targetX: 45, targetY: 10, labelY: 72, labelX: 61 },
+                { label: 'Colorful imagery', side: 'left', targetX: 75, targetY: 55, labelY: 49, labelX: 28 },
+                { label: 'Wordy list of offerings', side: 'left', targetX: 50, targetY: 50, labelY: 50, labelX: 50 }
+            ];
+            annotations.annotations2 = [
+                { label: 'Minimal text', side: 'right', targetX: 45, targetY: 30, labelY: 57, labelX: 76 },
+                { label: 'Restrained use of color', side: 'left', targetX: 50, targetY: 55, labelY: 25, labelX: 7 },
+                { label: 'Glassy materiality', side: 'right', targetX: 20, targetY: 80, labelY: 37, labelX: 60 },
+                { label: 'Vague naming/offerings', side: 'left', targetX: 20, targetY: 65, labelY: 58, labelX: 15 }
+            ];
+            initAnnotations();
+        }
+        
+        // Mouse move handler
+        document.addEventListener('mousemove', (e) => {
+            if (!dragging || dragging.type !== 'label') return;
+            
+            const { containerId, index } = dragging;
+            const wrapper = document.getElementById(containerId).parentElement;
+            const annotation = document.querySelector(`[data-container-id="${containerId}"][data-index="${index}"]`);
+            
+            if (!annotation || !wrapper) return;
+            
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const x = e.clientX - wrapperRect.left - dragOffset.x;
+            const y = e.clientY - wrapperRect.top - dragOffset.y;
+            
+            // Calculate percentages
+            const labelX = (x / wrapperRect.width) * 100;
+            const labelY = Math.max(0, Math.min(100, (y / wrapperRect.height) * 100));
+            
+            annotations[containerId][index].labelX = labelX;
+            annotations[containerId][index].labelY = labelY;
+            annotation.style.left = `${labelX}%`;
+            annotation.style.top = `${labelY}%`;
+            
+            // Update info badge
+            const info = annotation.querySelector('.annotation-info');
+            if (info) {
+                const ann = annotations[containerId][index];
+                info.textContent = `Target: ${Math.round(ann.targetX)}%, ${Math.round(ann.targetY)}% | Label: ${Math.round(labelX)}%, ${Math.round(labelY)}%`;
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (dragging) {
+                const annotation = document.querySelector(`[data-container-id="${dragging.containerId}"][data-index="${dragging.index}"]`);
+                if (annotation) {
+                    annotation.classList.remove('dragging');
+                }
+                dragging = null;
+            }
+        });
+        
+        function generateCode() {
+            let code = 'function initAnnotations() {\n';
+            code += '    // Format: addAnnotation(containerId, label, side, targetX%, targetY%, labelY%, showArrow)\n';
+            code += '    // After creating annotations, update their horizontal positions if needed\n\n';
+            
+            // Image 1
+            code += '    // Annotations for first image (storefront2.jpg) - no arrows\n';
+            annotations.annotations1.forEach((ann, idx) => {
+                code += `    addAnnotation('annotations1', '${ann.label}', '${ann.side}', ${Math.round(ann.targetX)}, ${Math.round(ann.targetY)}, ${Math.round(ann.labelY)}, false);\n`;
+                const labelX = Math.round(ann.labelX || (ann.side === 'left' ? -15 : 115));
+                if (labelX !== (ann.side === 'left' ? -15 : 115)) {
+                    code += `    document.querySelectorAll('#annotations1 .annotation')[${idx}].style.left = '${labelX}%';\n`;
+                }
+            });
+            
+            code += '\n    // Annotations for second image (storefront1.jpeg) - no arrows\n';
+            annotations.annotations2.forEach((ann, idx) => {
+                code += `    addAnnotation('annotations2', '${ann.label}', '${ann.side}', ${Math.round(ann.targetX)}, ${Math.round(ann.targetY)}, ${Math.round(ann.labelY)}, false);\n`;
+                const labelX = Math.round(ann.labelX || (ann.side === 'left' ? -15 : 115));
+                if (labelX !== (ann.side === 'left' ? -15 : 115)) {
+                    code += `    document.querySelectorAll('#annotations2 .annotation')[${idx}].style.left = '${labelX}%';\n`;
+                }
+            });
+            
+            code += '}';
+            
+            document.getElementById('generated-code').textContent = code;
+            document.getElementById('output').style.display = 'block';
+        }
+        
+        function copyCode() {
+            const code = document.getElementById('generated-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Code copied to clipboard!');
+            });
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initAnnotations();
+        });
+    </script>
+</body>
+</html>
+
