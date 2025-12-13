@@ -2216,7 +2216,11 @@ async function initSankeyDiagram() {
         });
 
         // Create links from locations to phases based on business order
+        // Store business data with each location for link rendering
+        const locationBusinessData = new Map();
+        
         multiBusinessGroups.forEach(([coordKey, businesses], locationIdx) => {
+            const businessLinks = [];
             businesses.forEach((business, businessOrder) => {
                 // businessOrder is 0-indexed, so add 1 to get phase number (1-5)
                 const phaseNumber = businessOrder + 1;
@@ -2226,23 +2230,24 @@ async function initSankeyDiagram() {
                     const sourceId = `location-${locationIdx}`;
                     const targetId = `phase-${phaseNumber - 1}`; // phaseIdx is 0-indexed
                     
-                    // Check if link already exists
-                    const existingLink = links.find(l => 
-                        l.source === sourceId && l.target === targetId
-                    );
-
-                    if (existingLink) {
-                        existingLink.value += 1;
-                    } else {
-                        links.push({
-                            source: sourceId,
-                            target: targetId,
-                            value: 1,
-                            isOldSchool: business.isOldSchool
-                        });
-                    }
+                    // Create a separate link for each business (don't aggregate)
+                    links.push({
+                        source: sourceId,
+                        target: targetId,
+                        value: 1,
+                        isOldSchool: business.isOldSchool,
+                        businessOrder: businessOrder,
+                        locationIdx: locationIdx
+                    });
+                    
+                    businessLinks.push({
+                        phaseNumber: phaseNumber - 1, // 0-indexed phase
+                        isOldSchool: business.isOldSchool,
+                        businessOrder: businessOrder
+                    });
                 }
             });
+            locationBusinessData.set(locationIdx, businessLinks);
         });
 
         // Render Sankey diagram using D3.js
@@ -2315,28 +2320,50 @@ async function initSankeyDiagram() {
         });
 
         // Draw links - connect from locations to phase columns
-        const link = svg.append('g').selectAll('path')
-            .data(links)
-            .enter()
-            .append('path')
-            .attr('d', d => {
-                const sourceNode = nodeMap.get(d.source);
-                const targetNode = nodeMap.get(d.target);
-                const sourceIdx = locationNodes.indexOf(sourceNode);
-                const targetPhaseIdx = targetNode.index;
-                
-                const sourceY = topMargin + sourceIdx * (nodeHeight + nodeSpacing) + nodeHeight / 2;
-                const targetX = leftX + 150 + targetPhaseIdx * columnSpacing + 20 + 50; // Center of phase column
-                const targetY = sourceY; // Keep same vertical position as source
-                
-                const midX = (leftX + 150 + targetX) / 2;
-                
-                return `M ${leftX + 150} ${sourceY} C ${midX} ${sourceY}, ${midX} ${targetY}, ${targetX} ${targetY}`;
-            })
-            .attr('fill', 'none')
-            .attr('stroke', d => d.isOldSchool ? '#8B6F47' : '#E91E63')
-            .attr('stroke-width', d => Math.max(1, d.value * 2))
-            .attr('stroke-opacity', 0.6);
+        // Group links by location to handle potential overlaps
+        const linksByLocation = new Map();
+        links.forEach(link => {
+            const locationIdx = link.locationIdx;
+            if (!linksByLocation.has(locationIdx)) {
+                linksByLocation.set(locationIdx, []);
+            }
+            linksByLocation.get(locationIdx).push(link);
+        });
+        
+        // Draw each link with correct color and slight offset if needed
+        links.forEach((d, linkIdx) => {
+            const sourceNode = nodeMap.get(d.source);
+            const targetNode = nodeMap.get(d.target);
+            const sourceIdx = locationNodes.indexOf(sourceNode);
+            const targetPhaseIdx = targetNode.index;
+            
+            const baseY = topMargin + sourceIdx * (nodeHeight + nodeSpacing) + nodeHeight / 2;
+            
+            // Add slight vertical offset for links from same location to same phase (if any)
+            // This helps distinguish overlapping links
+            const linksAtSameLocation = linksByLocation.get(d.locationIdx) || [];
+            const linksToSamePhase = linksAtSameLocation.filter(l => 
+                nodeMap.get(l.target).index === targetPhaseIdx
+            );
+            const offsetIndex = linksToSamePhase.indexOf(d);
+            const verticalOffset = (offsetIndex - (linksToSamePhase.length - 1) / 2) * 2; // Small offset
+            
+            const sourceY = baseY + verticalOffset;
+            const targetX = leftX + 150 + targetPhaseIdx * columnSpacing + 20 + 50; // Center of phase column
+            const targetY = sourceY; // Keep same vertical position as source
+            
+            const midX = (leftX + 150 + targetX) / 2;
+            
+            const pathData = `M ${leftX + 150} ${sourceY} C ${midX} ${sourceY}, ${midX} ${targetY}, ${targetX} ${targetY}`;
+            
+            svg.append('path')
+                .attr('d', pathData)
+                .attr('fill', 'none')
+                .attr('stroke', d.isOldSchool ? '#8B6F47' : '#E91E63')
+                .attr('stroke-width', 2)
+                .attr('stroke-opacity', 0.7)
+                .attr('stroke-linecap', 'round');
+        });
 
     } catch (error) {
         console.error('Error creating Sankey diagram:', error);
