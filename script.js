@@ -155,6 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (targetTab === 'background') {
                 initRegressionAnalysis();
                 initSankeyDiagram();
+                initStackedAreaChart();
             } else if (targetTab === 'comparison') {
                 initComparisonVisualization();
             }
@@ -2404,6 +2405,246 @@ async function initSankeyDiagram() {
     } catch (error) {
         console.error('Error creating Sankey diagram:', error);
         sankeyContainer.innerHTML = '<div style="padding: 2rem; text-align: center; color: #dc2626;">Error loading turnover flow diagram.</div>';
+    }
+}
+
+// Stacked Area Chart for Business Trends Over Time
+async function initStackedAreaChart() {
+    const chartContainer = document.getElementById('stacked-area-chart');
+    if (!chartContainer || chartContainer.dataset.initialized === 'true') return;
+
+    chartContainer.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;">Loading chart data...</div>';
+    chartContainer.dataset.initialized = 'true';
+
+    try {
+        // Load CSV data
+        const response = await fetch('data.csv');
+        if (!response.ok) {
+            throw new Error('Failed to load CSV data');
+        }
+
+        const csvText = await response.text();
+        const parsed = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: false
+        });
+
+        // Helper function to parse date (same as timeline)
+        const parseDate = (dateStr) => {
+            if (!dateStr || dateStr.trim() === '') return null;
+            try {
+                let date = new Date(dateStr);
+                if (!isNaN(date.getTime())) return date;
+                
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    date = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+                    if (!isNaN(date.getTime())) return date;
+                }
+                return null;
+            } catch {
+                return null;
+            }
+        };
+
+        // Get all storefronts with their data
+        const businesses = [];
+        const now = new Date();
+        let minDate = null;
+        let maxDate = now;
+
+        parsed.data.forEach(row => {
+            const isStorefront = row['LiveXYZSeptember132025_XYTableToPoint_isStorefront'];
+            if (isStorefront !== 'true' && isStorefront !== 'TRUE') return;
+
+            // Get predicted class
+            let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
+            predictedClass = String(predictedClass || '').trim();
+            if (predictedClass) {
+                predictedClass = predictedClass.replace(/^[01]\s+/, '');
+            }
+            const isOldSchool = predictedClass.toLowerCase().includes('old-school');
+            
+            if (!predictedClass) return;
+
+            const placeStatus = row['LiveXYZSeptember132025_XYTableToPoint_placeStatus'] || row['Status_simplified'] || '';
+            const statusLower = placeStatus.toLowerCase();
+            const isClosed = statusLower === 'closed' || 
+                           statusLower === 'permanently closed' || 
+                           statusLower === 'temporarily closed';
+
+            // Get start date
+            const startDateStr = row['placeCreationDate_short'] || 
+                                row['LiveXYZSeptember132025_XYTableToPoint_placeCreationDate'] ||
+                                row['placeCreationDate'];
+            const startDate = parseDate(startDateStr);
+            
+            // Get end date (for closed businesses)
+            let endDate = null;
+            if (isClosed) {
+                const endDateStr = row['LiveXYZSeptember132025_XYTableToPoint_validityTime_end'];
+                endDate = parseDate(endDateStr);
+            }
+
+            if (!startDate && !endDate) return;
+
+            const actualStartDate = startDate || new Date(0);
+            const actualEndDate = endDate || now;
+
+            // Update min/max dates
+            if (startDate && (!minDate || startDate < minDate)) {
+                minDate = startDate;
+            }
+            if (endDate && endDate > maxDate) {
+                maxDate = endDate;
+            }
+
+            businesses.push({
+                isOldSchool: isOldSchool,
+                startDate: actualStartDate,
+                endDate: actualEndDate
+            });
+        });
+
+        if (businesses.length === 0) {
+            chartContainer.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;">No data available for chart.</div>';
+            return;
+        }
+
+        // Generate monthly time series
+        const startMonth = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+        const endMonth = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+        
+        const timeSeries = [];
+        let currentMonth = new Date(startMonth);
+        
+        while (currentMonth <= endMonth) {
+            const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+            
+            // Count active businesses at this month
+            let oldSchoolCount = 0;
+            let newSchoolCount = 0;
+            
+            businesses.forEach(business => {
+                const businessStart = new Date(business.startDate.getFullYear(), business.startDate.getMonth(), 1);
+                const businessEnd = business.endDate ? 
+                    new Date(business.endDate.getFullYear(), business.endDate.getMonth(), 1) : 
+                    new Date(now.getFullYear(), now.getMonth(), 1);
+                
+                // Check if business is active in this month
+                if (currentMonth >= businessStart && currentMonth <= businessEnd) {
+                    if (business.isOldSchool) {
+                        oldSchoolCount++;
+                    } else {
+                        newSchoolCount++;
+                    }
+                }
+            });
+            
+            timeSeries.push({
+                date: new Date(currentMonth),
+                monthKey: monthKey,
+                oldSchool: oldSchoolCount,
+                newSchool: newSchoolCount,
+                total: oldSchoolCount + newSchoolCount
+            });
+            
+            // Move to next month
+            currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+        }
+
+        // Render chart using D3.js
+        const margin = { top: 20, right: 30, bottom: 60, left: 60 };
+        const width = Math.max(800, chartContainer.offsetWidth || 800) - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        chartContainer.innerHTML = '';
+        const svg = d3.select('#stacked-area-chart')
+            .append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom);
+
+        const g = svg.append('g')
+            .attr('transform', `translate(${margin.left},${margin.top})`);
+
+        // Create scales
+        const xScale = d3.scaleTime()
+            .domain([startMonth, endMonth])
+            .range([0, width]);
+
+        const yScale = d3.scaleLinear()
+            .domain([0, d3.max(timeSeries, d => d.total)])
+            .nice()
+            .range([height, 0]);
+
+        // Create area generators
+        // Old-school area: from bottom (height) to oldSchool value
+        const areaOldSchool = d3.area()
+            .x(d => xScale(d.date))
+            .y0(height)
+            .y1(d => yScale(d.oldSchool))
+            .curve(d3.curveMonotoneX);
+
+        // New-school area: from oldSchool value to total value
+        const areaNewSchool = d3.area()
+            .x(d => xScale(d.date))
+            .y0(d => yScale(d.oldSchool))
+            .y1(d => yScale(d.total))
+            .curve(d3.curveMonotoneX);
+
+        // Draw old-school area (brown, bottom)
+        g.append('path')
+            .datum(timeSeries)
+            .attr('fill', '#8B6F47')
+            .attr('opacity', 0.8)
+            .attr('d', areaOldSchool);
+
+        // Draw new-school area (pink, top)
+        g.append('path')
+            .datum(timeSeries)
+            .attr('fill', '#E91E63')
+            .attr('opacity', 0.8)
+            .attr('d', areaNewSchool);
+
+        // Add x-axis
+        const xAxis = d3.axisBottom(xScale)
+            .ticks(d3.timeMonth.every(6))
+            .tickFormat(d3.timeFormat('%Y-%m'));
+
+        g.append('g')
+            .attr('transform', `translate(0,${height})`)
+            .call(xAxis)
+            .selectAll('text')
+            .style('text-anchor', 'end')
+            .attr('dx', '-.8em')
+            .attr('dy', '.15em')
+            .attr('transform', 'rotate(-45)');
+
+        // Add y-axis
+        const yAxis = d3.axisLeft(yScale);
+        g.append('g')
+            .call(yAxis);
+
+        // Add axis labels
+        g.append('text')
+            .attr('transform', 'rotate(-90)')
+            .attr('y', 0 - margin.left)
+            .attr('x', 0 - (height / 2))
+            .attr('dy', '1em')
+            .style('text-anchor', 'middle')
+            .style('font-size', '12px')
+            .text('Number of Active Businesses');
+
+        g.append('text')
+            .attr('transform', `translate(${width / 2}, ${height + margin.bottom - 10})`)
+            .style('text-anchor', 'middle')
+            .style('font-size', '12px')
+            .text('Date');
+
+    } catch (error) {
+        console.error('Error creating stacked area chart:', error);
+        chartContainer.innerHTML = `<div style="padding: 2rem; text-align: center; color: #dc2626;">Error loading chart: ${error.message}</div>`;
     }
 }
 

@@ -227,6 +227,24 @@
                     </section>
 
                     <section class="content-section">
+                        <h2>Business Trends Over Time</h2>
+                        <p>This stacked area chart shows the count of old-school and new-school businesses over time, using the same opening/closing logic as the timeline. The chart tracks active businesses at each point in time based on their placeCreationDate and validityTime_end.</p>
+                        <div id="stacked-area-chart" style="width: 100%; min-height: 400px; margin-top: 2rem;">
+                            <div style="padding: 2rem; text-align: center; color: #64748b;">Loading chart...</div>
+                        </div>
+                        <div class="stacked-area-legend" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; display: flex; gap: 2rem; justify-content: center;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="display: inline-block; width: 30px; height: 20px; background: #8B6F47; border-radius: 4px;"></span>
+                                <span>Old-school Style</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="display: inline-block; width: 30px; height: 20px; background: #E91E63; border-radius: 4px;"></span>
+                                <span>New-school Style</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="content-section">
                         <h2>Turnover Flow</h2>
                         <p>This Sankey diagram visualizes business turnover at shared locations, showing how businesses flow through time periods. Each row on the left represents a unique location (shared lat/long), colored by the dominant typography style (old-school in brown, new-school in pink). Each column moving right represents a time period based on placeCreationDate.</p>
                         <div id="sankey-diagram" style="width: 100%; min-height: 600px; margin-top: 2rem;">
