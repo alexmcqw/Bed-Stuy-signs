@@ -2180,25 +2180,28 @@ async function initSankeyDiagram() {
         // Define 5 phases
         const phases = ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5'];
         
-        // For each phase, collect businesses and organize by old-school (top) / new-school (bottom)
-        const phaseBusinesses = phases.map(() => ({ oldSchool: [], newSchool: [] }));
-        
-        // Track business sequences for linking
-        const businessSequences = [];
-        const businessIdMap = new Map(); // Map to track businesses by unique ID
+        // Collect addresses and their businesses
+        const addressData = [];
+        const addressBusinessMap = new Map(); // Map address to businesses in each phase
         
         multiBusinessGroups.forEach(([coordKey, businesses], locationIdx) => {
             const address = coordinateAddresses.get(coordKey) || `Location ${locationIdx + 1}`;
-            const sequence = [];
+            
+            // Determine dominant typography (based on first business or majority)
+            const firstBusiness = businesses[0];
+            const oldSchoolCount = businesses.filter(b => b.isOldSchool).length;
+            const isOldSchoolDominant = oldSchoolCount >= businesses.length / 2;
+            const dominantIsOldSchool = firstBusiness ? firstBusiness.isOldSchool : isOldSchoolDominant;
+            
+            // Track which phases this address has businesses in
+            const phaseBusinesses = phases.map(() => ({ oldSchool: [], newSchool: [] }));
             
             businesses.forEach((business, businessOrder) => {
                 const phaseNumber = businessOrder; // 0-indexed phase (0-4)
                 
                 // Only process phases 1-5
                 if (phaseNumber < 5) {
-                    const businessId = `${locationIdx}-${businessOrder}`;
                     const businessData = {
-                        id: businessId,
                         locationIdx: locationIdx,
                         address: address,
                         phaseNumber: phaseNumber,
@@ -2206,23 +2209,65 @@ async function initSankeyDiagram() {
                         businessOrder: businessOrder
                     };
                     
-                    businessIdMap.set(businessId, businessData);
-                    
                     // Add to appropriate phase group
                     if (business.isOldSchool) {
                         phaseBusinesses[phaseNumber].oldSchool.push(businessData);
                     } else {
                         phaseBusinesses[phaseNumber].newSchool.push(businessData);
                     }
-                    
-                    sequence.push(businessData);
                 }
             });
             
-            if (sequence.length > 0) {
-                businessSequences.push(sequence);
-            }
+            addressData.push({
+                address: address,
+                locationIdx: locationIdx,
+                isOldSchool: dominantIsOldSchool,
+                phaseBusinesses: phaseBusinesses,
+                businessCount: businesses.length
+            });
+            
+            addressBusinessMap.set(address, phaseBusinesses);
         });
+        
+        // Organize addresses by old-school (top) / new-school (bottom)
+        const addressGroups = {
+            oldSchool: addressData.filter(a => a.isOldSchool),
+            newSchool: addressData.filter(a => !a.isOldSchool)
+        };
+        
+        // For each phase, collect businesses and organize by old-school (top) / new-school (bottom)
+        const phaseBusinesses = phases.map(() => ({ oldSchool: [], newSchool: [] }));
+        
+        addressData.forEach(addressInfo => {
+            addressInfo.phaseBusinesses.forEach((phaseData, phaseIdx) => {
+                phaseBusinesses[phaseIdx].oldSchool.push(...phaseData.oldSchool);
+                phaseBusinesses[phaseIdx].newSchool.push(...phaseData.newSchool);
+            });
+        });
+        
+        // Calculate positions for addresses (left column)
+        const addressPositions = new Map();
+        let addressYIndex = 0;
+        
+        // Position old-school addresses (top)
+        addressGroups.oldSchool.forEach(addressInfo => {
+            addressPositions.set(addressInfo.address, {
+                address: addressInfo.address,
+                yIndex: addressYIndex++,
+                isOldSchool: true
+            });
+        });
+        
+        // Position new-school addresses (bottom)
+        addressGroups.newSchool.forEach(addressInfo => {
+            addressPositions.set(addressInfo.address, {
+                address: addressInfo.address,
+                yIndex: addressYIndex++,
+                isOldSchool: false
+            });
+        });
+        
+        const totalAddresses = addressYIndex;
         
         // Calculate positions for each phase column
         const phasePositions = phaseBusinesses.map((phase, phaseIdx) => {
@@ -2233,27 +2278,27 @@ async function initSankeyDiagram() {
             // Calculate positions: old-school at top, new-school at bottom
             const positions = new Map();
             
-            // Position old-school businesses (top) - index 0 to oldSchoolCount-1
+            // Position old-school businesses (top)
             phase.oldSchool.forEach((business, idx) => {
-                positions.set(business.id, {
+                const businessKey = `${business.address}-${business.phaseNumber}`;
+                positions.set(businessKey, {
                     business: business,
-                    yIndex: idx, // Position within old-school group
+                    yIndex: idx,
                     height: 1,
                     phaseIdx: phaseIdx,
-                    isOldSchool: true,
-                    groupIndex: idx
+                    isOldSchool: true
                 });
             });
             
-            // Position new-school businesses (bottom) - index oldSchoolCount to totalCount-1
+            // Position new-school businesses (bottom)
             phase.newSchool.forEach((business, idx) => {
-                positions.set(business.id, {
+                const businessKey = `${business.address}-${business.phaseNumber}`;
+                positions.set(businessKey, {
                     business: business,
-                    yIndex: oldSchoolCount + idx, // Position within entire column
+                    yIndex: oldSchoolCount + idx,
                     height: 1,
                     phaseIdx: phaseIdx,
-                    isOldSchool: false,
-                    groupIndex: idx
+                    isOldSchool: false
                 });
             });
             
@@ -2267,41 +2312,58 @@ async function initSankeyDiagram() {
             };
         });
         
-        // Create links between consecutive phases
+        // Create links from addresses to phases
         const links = [];
-        businessSequences.forEach(sequence => {
-            for (let i = 0; i < sequence.length - 1; i++) {
-                const sourceBusiness = sequence[i];
-                const targetBusiness = sequence[i + 1];
+        addressData.forEach(addressInfo => {
+            addressInfo.phaseBusinesses.forEach((phaseData, phaseIdx) => {
+                // Link from address to each business in this phase
+                phaseData.oldSchool.forEach(business => {
+                    const businessKey = `${business.address}-${business.phaseNumber}`;
+                    const phasePos = phasePositions[phaseIdx].positions.get(businessKey);
+                    const addrPos = addressPositions.get(addressInfo.address);
+                    
+                    if (phasePos && addrPos) {
+                        links.push({
+                            source: addressInfo.address,
+                            target: business,
+                            sourcePos: addrPos,
+                            targetPos: phasePos,
+                            isOldSchool: true
+                        });
+                    }
+                });
                 
-                const sourcePos = phasePositions[sourceBusiness.phaseNumber].positions.get(sourceBusiness.id);
-                const targetPos = phasePositions[targetBusiness.phaseNumber].positions.get(targetBusiness.id);
-                
-                if (sourcePos && targetPos) {
-                    links.push({
-                        source: sourceBusiness,
-                        target: targetBusiness,
-                        sourcePos: sourcePos,
-                        targetPos: targetPos,
-                        isOldSchool: sourceBusiness.isOldSchool // Color based on source
-                    });
-                }
-            }
+                phaseData.newSchool.forEach(business => {
+                    const businessKey = `${business.address}-${business.phaseNumber}`;
+                    const phasePos = phasePositions[phaseIdx].positions.get(businessKey);
+                    const addrPos = addressPositions.get(addressInfo.address);
+                    
+                    if (phasePos && addrPos) {
+                        links.push({
+                            source: addressInfo.address,
+                            target: business,
+                            sourcePos: addrPos,
+                            targetPos: phasePos,
+                            isOldSchool: false
+                        });
+                    }
+                });
+            });
         });
 
         // Render parallel sets diagram
-        const maxCount = Math.max(...phasePositions.map(p => p.totalCount));
+        const maxCount = Math.max(totalAddresses, ...phasePositions.map(p => p.totalCount));
         const nodeHeight = 12;
         const nodeSpacing = 2;
-        const linkWidth = 100;
         
         const leftMargin = 50;
         const rightMargin = 50;
         const topMargin = 80;
-        const columnWidth = 200;
+        const addressColumnWidth = 200;
+        const phaseColumnWidth = 150;
         const columnSpacing = 50;
         
-        const width = leftMargin + rightMargin + (phases.length * (columnWidth + columnSpacing));
+        const width = leftMargin + rightMargin + addressColumnWidth + (phases.length * (phaseColumnWidth + columnSpacing));
         const height = topMargin + (maxCount * (nodeHeight + nodeSpacing)) + 100;
         
         sankeyContainer.innerHTML = '';
@@ -2310,20 +2372,96 @@ async function initSankeyDiagram() {
             .attr('width', width)
             .attr('height', height);
 
-        // Calculate scale for positioning businesses within each column
-        const getYPosition = (position, phaseTotal) => {
-            // Use yIndex to position businesses sequentially
-            return topMargin + (position.yIndex * (nodeHeight + nodeSpacing));
+        // Calculate Y position helper
+        const getYPosition = (yIndex) => {
+            return topMargin + (yIndex * (nodeHeight + nodeSpacing));
         };
+
+        // Draw address column (left)
+        const addressX = leftMargin;
+        
+        // Draw address label
+        svg.append('text')
+            .attr('x', addressX + addressColumnWidth / 2)
+            .attr('y', topMargin - 20)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '14px')
+            .attr('font-weight', 'bold')
+            .attr('fill', '#1e293b')
+            .text('Address');
+        
+        // Draw old-school addresses (brown, at top)
+        addressGroups.oldSchool.forEach(addressInfo => {
+            const pos = addressPositions.get(addressInfo.address);
+            if (pos) {
+                const y = getYPosition(pos.yIndex);
+                const color = '#8B6F47';
+                
+                svg.append('rect')
+                    .attr('x', addressX)
+                    .attr('y', y)
+                    .attr('width', addressColumnWidth)
+                    .attr('height', nodeHeight)
+                    .attr('fill', color)
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 1)
+                    .attr('rx', 2);
+                
+                // Add address text (truncate if too long)
+                const addressText = addressInfo.address.length > 25 ? 
+                    addressInfo.address.substring(0, 22) + '...' : 
+                    addressInfo.address;
+                
+                svg.append('text')
+                    .attr('x', addressX + 5)
+                    .attr('y', y + nodeHeight / 2)
+                    .attr('dy', '0.35em')
+                    .attr('fill', '#fff')
+                    .attr('font-size', '10px')
+                    .text(addressText);
+            }
+        });
+        
+        // Draw new-school addresses (pink, at bottom)
+        addressGroups.newSchool.forEach(addressInfo => {
+            const pos = addressPositions.get(addressInfo.address);
+            if (pos) {
+                const y = getYPosition(pos.yIndex);
+                const color = '#E91E63';
+                
+                svg.append('rect')
+                    .attr('x', addressX)
+                    .attr('y', y)
+                    .attr('width', addressColumnWidth)
+                    .attr('height', nodeHeight)
+                    .attr('fill', color)
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 1)
+                    .attr('rx', 2);
+                
+                // Add address text
+                const addressText = addressInfo.address.length > 25 ? 
+                    addressInfo.address.substring(0, 22) + '...' : 
+                    addressInfo.address;
+                
+                svg.append('text')
+                    .attr('x', addressX + 5)
+                    .attr('y', y + nodeHeight / 2)
+                    .attr('dy', '0.35em')
+                    .attr('fill', '#fff')
+                    .attr('font-size', '10px')
+                    .text(addressText);
+            }
+        });
 
         // Draw phase columns and businesses
         phases.forEach((phaseName, phaseIdx) => {
-            const phaseX = leftMargin + phaseIdx * (columnWidth + columnSpacing);
+            const phaseX = leftMargin + addressColumnWidth + columnSpacing + phaseIdx * (phaseColumnWidth + columnSpacing);
             const phaseData = phasePositions[phaseIdx];
             
             // Draw phase label
             svg.append('text')
-                .attr('x', phaseX + columnWidth / 2)
+                .attr('x', phaseX + phaseColumnWidth / 2)
                 .attr('y', topMargin - 20)
                 .attr('text-anchor', 'middle')
                 .attr('font-size', '14px')
@@ -2333,15 +2471,16 @@ async function initSankeyDiagram() {
             
             // Draw old-school businesses (brown, at top)
             phaseData.oldSchool.forEach(business => {
-                const pos = phaseData.positions.get(business.id);
+                const businessKey = `${business.address}-${business.phaseNumber}`;
+                const pos = phaseData.positions.get(businessKey);
                 if (pos) {
-                    const y = getYPosition(pos, phaseData.totalCount);
+                    const y = getYPosition(pos.yIndex);
                     const color = '#8B6F47';
                     
                     svg.append('rect')
                         .attr('x', phaseX)
                         .attr('y', y)
-                        .attr('width', columnWidth)
+                        .attr('width', phaseColumnWidth)
                         .attr('height', nodeHeight)
                         .attr('fill', color)
                         .attr('stroke', '#fff')
@@ -2352,15 +2491,16 @@ async function initSankeyDiagram() {
             
             // Draw new-school businesses (pink, at bottom)
             phaseData.newSchool.forEach(business => {
-                const pos = phaseData.positions.get(business.id);
+                const businessKey = `${business.address}-${business.phaseNumber}`;
+                const pos = phaseData.positions.get(businessKey);
                 if (pos) {
-                    const y = getYPosition(pos, phaseData.totalCount);
+                    const y = getYPosition(pos.yIndex);
                     const color = '#E91E63';
                     
                     svg.append('rect')
                         .attr('x', phaseX)
                         .attr('y', y)
-                        .attr('width', columnWidth)
+                        .attr('width', phaseColumnWidth)
                         .attr('height', nodeHeight)
                         .attr('fill', color)
                         .attr('stroke', '#fff')
@@ -2370,19 +2510,13 @@ async function initSankeyDiagram() {
             });
         });
 
-        // Draw links between phases
+        // Draw links from addresses to phases
         links.forEach(link => {
-            const sourcePhaseIdx = link.source.phaseNumber;
-            const targetPhaseIdx = link.target.phaseNumber;
+            const sourceX = addressX + addressColumnWidth;
+            const targetX = leftMargin + addressColumnWidth + columnSpacing + link.target.phaseNumber * (phaseColumnWidth + columnSpacing);
             
-            const sourceX = leftMargin + sourcePhaseIdx * (columnWidth + columnSpacing) + columnWidth;
-            const targetX = leftMargin + targetPhaseIdx * (columnWidth + columnSpacing);
-            
-            const sourcePhaseTotal = phasePositions[sourcePhaseIdx].totalCount;
-            const targetPhaseTotal = phasePositions[targetPhaseIdx].totalCount;
-            
-            const sourceY = getYPosition(link.sourcePos, sourcePhaseTotal) + nodeHeight / 2;
-            const targetY = getYPosition(link.targetPos, targetPhaseTotal) + nodeHeight / 2;
+            const sourceY = getYPosition(link.sourcePos.yIndex) + nodeHeight / 2;
+            const targetY = getYPosition(link.targetPos.yIndex) + nodeHeight / 2;
             
             // Create curved path for the link
             const midX1 = sourceX + (targetX - sourceX) * 0.3;
