@@ -364,7 +364,9 @@ async function loadCSVData() {
             }
         }
 
-        createMarkers(parsed.data);
+        // Get headers for column AE lookup
+        const headers = parsed.meta.fields || Object.keys(parsed.data[0] || {});
+        createMarkers(parsed.data, headers);
     } catch (error) {
         console.error('Error loading CSV:', error);
         const mapContainer = document.getElementById('map-visualization');
@@ -374,7 +376,7 @@ async function loadCSVData() {
     }
 }
 
-function createMarkers(rows) {
+function createMarkers(rows, headers) {
     if (!markers) return;
 
     // Clear existing markers
@@ -383,6 +385,9 @@ function createMarkers(rows) {
     let oldSchoolCount = 0;
     let newSchoolCount = 0;
     let totalCount = 0;
+
+    // Get column AE (index 30) - image link column
+    const columnAE = headers && headers[30] ? headers[30] : null;
 
     // First, group rows by coordinates
     const coordinateGroups = new Map();
@@ -398,8 +403,8 @@ function createMarkers(rows) {
                 return;
             }
 
-            // Get photo URL and skip if no image
-            const photoUrl = row['Photo_URL'] || '';
+            // Get photo URL from column AE, fallback to Photo_URL
+            const photoUrl = (columnAE && row[columnAE]) ? row[columnAE] : (row['Photo_URL'] || '');
             if (!photoUrl || photoUrl.trim() === '') {
                 return; // Skip markers without images
             }
