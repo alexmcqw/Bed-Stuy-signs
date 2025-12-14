@@ -204,6 +204,19 @@ body {
     display: block;
 }
 
+.image-text-column {
+    margin-top: 1.5rem;
+    width: 100%;
+}
+
+.image-text-column .large-text {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    font-weight: 400;
+    color: #1e293b;
+    margin: 0;
+}
+
 .annotations {
     position: absolute;
     top: 0;
