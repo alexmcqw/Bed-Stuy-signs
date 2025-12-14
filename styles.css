@@ -209,14 +209,22 @@ body {
     flex: 1;
     min-width: 300px;
     max-width: 500px;
+    text-align: center;
 }
 
 .image-text-column .large-text {
     font-size: 1.5rem;
     line-height: 1.6;
     font-weight: 400;
-    color: #1e293b;
     margin: 0 0 1rem 0;
+}
+
+.old-school-quotes .large-text {
+    color: #8B6F47;
+}
+
+.new-school-quotes .large-text {
+    color: #E91E63;
 }
 
 .annotations {
