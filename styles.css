@@ -206,7 +206,9 @@ body {
 
 .image-text-column {
     margin-top: 1.5rem;
-    width: 100%;
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
 }
 
 .image-text-column .large-text {
