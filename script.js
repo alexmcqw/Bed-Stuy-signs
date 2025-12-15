@@ -2405,22 +2405,11 @@ async function initSankeyDiagram() {
             .attr('fill', '#1e293b')
             .text('Address');
         
-        // Draw old-school addresses (brown, at top)
+        // Draw addresses (plain text, no colored backgrounds)
         addressGroups.oldSchool.forEach(addressInfo => {
             const pos = addressPositions.get(addressInfo.address);
             if (pos) {
                 const y = getYPosition(pos.yIndex);
-                const color = '#8B6F47';
-                
-                svg.append('rect')
-                    .attr('x', addressX)
-                    .attr('y', y)
-                    .attr('width', addressColumnWidth)
-                    .attr('height', nodeHeight)
-                    .attr('fill', color)
-                    .attr('stroke', '#fff')
-                    .attr('stroke-width', 1)
-                    .attr('rx', 2);
                 
                 // Add address text (truncate if too long)
                 const addressText = addressInfo.address.length > 25 ? 
@@ -2428,31 +2417,19 @@ async function initSankeyDiagram() {
                     addressInfo.address;
                 
                 svg.append('text')
-                    .attr('x', addressX + 5)
+                    .attr('x', addressX)
                     .attr('y', y + nodeHeight / 2)
                     .attr('dy', '0.35em')
-                    .attr('fill', '#fff')
-                    .attr('font-size', '10px')
+                    .attr('fill', '#1e293b')
+                    .attr('font-size', '11px')
                     .text(addressText);
             }
         });
         
-        // Draw new-school addresses (pink, at bottom)
         addressGroups.newSchool.forEach(addressInfo => {
             const pos = addressPositions.get(addressInfo.address);
             if (pos) {
                 const y = getYPosition(pos.yIndex);
-                const color = '#E91E63';
-                
-                svg.append('rect')
-                    .attr('x', addressX)
-                    .attr('y', y)
-                    .attr('width', addressColumnWidth)
-                    .attr('height', nodeHeight)
-                    .attr('fill', color)
-                    .attr('stroke', '#fff')
-                    .attr('stroke-width', 1)
-                    .attr('rx', 2);
                 
                 // Add address text
                 const addressText = addressInfo.address.length > 25 ? 
@@ -2460,11 +2437,11 @@ async function initSankeyDiagram() {
                     addressInfo.address;
                 
                 svg.append('text')
-                    .attr('x', addressX + 5)
+                    .attr('x', addressX)
                     .attr('y', y + nodeHeight / 2)
                     .attr('dy', '0.35em')
-                    .attr('fill', '#fff')
-                    .attr('font-size', '10px')
+                    .attr('fill', '#1e293b')
+                    .attr('font-size', '11px')
                     .text(addressText);
             }
         });
