@@ -1061,40 +1061,86 @@ async function initTimeline() {
             
             // Make x-axis sticky after plot is rendered
             setTimeout(() => {
-                const svg = timelineContainer.querySelector('svg');
+                const svg = plotWrapper.querySelector('svg');
                 if (svg) {
-                    // Find the x-axis group - it should be near the top
+                    // Find the x-axis group - look for groups with text elements that look like years
                     const allGroups = Array.from(svg.querySelectorAll('g'));
-                    const xAxisGroup = allGroups.find(g => {
-                        const transform = g.getAttribute('transform') || '';
-                        const match = transform.match(/translate\([^,]+,\s*([\d.]+)\)/);
-                        if (match) {
-                            const yPos = parseFloat(match[1]);
-                            // X-axis should be near the top (within marginTop range)
-                            return yPos >= 50 && yPos <= 80;
+                    let xAxisGroup = null;
+                    
+                    // Try to find x-axis by looking for groups with year-like text
+                    for (const g of allGroups) {
+                        const texts = g.querySelectorAll('text');
+                        let hasYearText = false;
+                        texts.forEach(text => {
+                            const textContent = text.textContent || '';
+                            // Check if text looks like a year (4 digits, or year-like format)
+                            if (/^\d{4}$/.test(textContent.trim()) || textContent.includes('2000') || textContent.includes('202')) {
+                                hasYearText = true;
+                            }
+                        });
+                        
+                        if (hasYearText) {
+                            const transform = g.getAttribute('transform') || '';
+                            const match = transform.match(/translate\([^,]+,\s*([\d.]+)\)/);
+                            if (match) {
+                                const yPos = parseFloat(match[1]);
+                                // X-axis should be near the top
+                                if (yPos >= 40 && yPos <= 100) {
+                                    xAxisGroup = g;
+                                    break;
+                                }
+                            }
                         }
-                        return false;
-                    });
+                    }
+                    
+                    // Fallback: find by position if year text method didn't work
+                    if (!xAxisGroup) {
+                        xAxisGroup = allGroups.find(g => {
+                            const transform = g.getAttribute('transform') || '';
+                            const match = transform.match(/translate\([^,]+,\s*([\d.]+)\)/);
+                            if (match) {
+                                const yPos = parseFloat(match[1]);
+                                return yPos >= 50 && yPos <= 80;
+                            }
+                            return false;
+                        });
+                    }
                     
                     if (xAxisGroup) {
-                        xAxisGroup.style.position = 'sticky';
-                        xAxisGroup.style.top = '0';
-                        xAxisGroup.style.zIndex = '100';
-                        xAxisGroup.style.backgroundColor = '#f8fafc';
-                        xAxisGroup.style.paddingBottom = '15px';
-                        xAxisGroup.style.paddingTop = '5px';
+                        // Extract x-axis position
+                        const transform = xAxisGroup.getAttribute('transform') || '';
+                        const yMatch = transform.match(/translate\([^,]+,\s*([\d.]+)\)/);
+                        const xAxisY = yMatch ? parseFloat(yMatch[1]) : 60;
                         
-                        // Add a backdrop rect for better visibility
-                        const svgNS = 'http://www.w3.org/2000/svg';
-                        const backdrop = document.createElementNS(svgNS, 'rect');
+                        // Create a sticky header div that will show the x-axis
+                        const stickyHeader = document.createElement('div');
+                        stickyHeader.className = 'timeline-sticky-x-axis';
+                        stickyHeader.style.cssText = `
+                            position: sticky;
+                            top: 0;
+                            z-index: 100;
+                            background-color: #f8fafc;
+                            padding: 10px 0;
+                            margin-bottom: -${xAxisY + 20}px;
+                            height: ${xAxisY + 20}px;
+                            overflow: visible;
+                        `;
+                        
+                        // Clone the x-axis into a new SVG for the sticky header
+                        const stickySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                         const svgWidth = parseFloat(svg.getAttribute('width') || '1200');
-                        backdrop.setAttribute('x', '-200'); // Start before left margin
-                        backdrop.setAttribute('y', '-10');
-                        backdrop.setAttribute('width', svgWidth.toString());
-                        backdrop.setAttribute('height', '70');
-                        backdrop.setAttribute('fill', '#f8fafc');
-                        backdrop.setAttribute('opacity', '0.95');
-                        xAxisGroup.insertBefore(backdrop, xAxisGroup.firstChild);
+                        stickySvg.setAttribute('width', svgWidth);
+                        stickySvg.setAttribute('height', (xAxisY + 20).toString());
+                        stickySvg.style.cssText = 'position: absolute; top: 0; left: 0; pointer-events: none; width: 100%;';
+                        
+                        const clonedGroup = xAxisGroup.cloneNode(true);
+                        // Adjust the transform to position at top
+                        clonedGroup.setAttribute('transform', transform.replace(/translate\([^,]+,\s*[\d.]+\)/, `translate(0, ${xAxisY})`));
+                        stickySvg.appendChild(clonedGroup);
+                        stickyHeader.appendChild(stickySvg);
+                        
+                        // Insert the sticky header at the top of the wrapper
+                        plotWrapper.insertBefore(stickyHeader, plotWrapper.firstChild);
                     }
                     
                     // Add tooltips to dots by matching both x and y coordinates
@@ -1169,7 +1215,7 @@ async function initTimeline() {
                                 
                                 let tooltipContent = `<strong>${matchingBusiness.name}</strong>`;
                                 if (matchingBusiness.photoUrl && matchingBusiness.photoUrl.trim()) {
-                                    tooltipContent += `<br><img src="${matchingBusiness.photoUrl}" alt="${matchingBusiness.name}" onerror="this.style.display='none'">`;
+                                    tooltipContent += `<br><img src="${matchingBusiness.photoUrl}" alt="${matchingBusiness.name}" style="max-width: 200px; max-height: 120px; margin-top: 8px; border-radius: 4px; display: block;" onerror="this.style.display='none'">`;
                                 }
                                 
                                 tooltip.innerHTML = tooltipContent;
@@ -1179,8 +1225,8 @@ async function initTimeline() {
                                 circle.addEventListener('mouseenter', () => {
                                     tooltip.style.display = 'block';
                                     const rect = circle.getBoundingClientRect();
-                                    // Position tooltip to the right of the dot, vertically centered
-                                    tooltip.style.left = (rect.right + 10) + 'px';
+                                    // Position tooltip closer to the dot (5px instead of 10px), vertically centered
+                                    tooltip.style.left = (rect.right + 5) + 'px';
                                     tooltip.style.top = (rect.top + rect.height / 2 - tooltip.offsetHeight / 2) + 'px';
                                     
                                     // Adjust if tooltip goes off screen to the right
