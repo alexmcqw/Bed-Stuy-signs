@@ -2154,11 +2154,19 @@ async function initSankeyDiagram() {
 
             const placeCreationDate = row['placeCreationDate_short'] || row['placeCreationDate'] || '';
             const isOldSchool = predictedClass.includes('Old-school');
+            
+            // Get business name
+            const businessName = row['LiveXYZSeptember132025_XYTableToPoint_name'] || 
+                                row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] ||
+                                row['name'] || 
+                                row['resolvedName'] || 
+                                'Unknown';
 
             coordinateGroups.get(coordKey).push({
                 placeCreationDate,
                 isOldSchool,
-                predictedClass
+                predictedClass,
+                businessName: businessName.trim()
             });
         });
 
@@ -2212,7 +2220,8 @@ async function initSankeyDiagram() {
                         address: address,
                         phaseNumber: phaseNumber,
                         isOldSchool: business.isOldSchool,
-                        businessOrder: businessOrder
+                        businessOrder: businessOrder,
+                        businessName: business.businessName || 'Unknown'
                     };
                     
                     // Add to appropriate phase group
@@ -2362,10 +2371,10 @@ async function initSankeyDiagram() {
         const nodeHeight = 12;
         const nodeSpacing = 2;
         
-        const leftMargin = 50;
+        const leftMargin = 20; // Moved addresses further left
         const rightMargin = 50;
         const topMargin = 80;
-        const addressColumnWidth = 200;
+        const addressColumnWidth = 180; // Slightly narrower to move left
         const phaseColumnWidth = 150;
         const columnSpacing = 50;
         
@@ -2492,6 +2501,19 @@ async function initSankeyDiagram() {
                         .attr('stroke', '#fff')
                         .attr('stroke-width', 1)
                         .attr('rx', 2);
+                    
+                    // Add business name text
+                    const businessName = business.businessName || 'Unknown';
+                    const nameText = businessName.length > 18 ? businessName.substring(0, 15) + '...' : businessName;
+                    svg.append('text')
+                        .attr('x', phaseX + phaseColumnWidth / 2)
+                        .attr('y', y + nodeHeight / 2)
+                        .attr('dy', '0.35em')
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', '#fff')
+                        .attr('font-size', '9px')
+                        .attr('font-weight', '500')
+                        .text(nameText);
                 }
             });
             
@@ -2512,6 +2534,19 @@ async function initSankeyDiagram() {
                         .attr('stroke', '#fff')
                         .attr('stroke-width', 1)
                         .attr('rx', 2);
+                    
+                    // Add business name text
+                    const businessName = business.businessName || 'Unknown';
+                    const nameText = businessName.length > 18 ? businessName.substring(0, 15) + '...' : businessName;
+                    svg.append('text')
+                        .attr('x', phaseX + phaseColumnWidth / 2)
+                        .attr('y', y + nodeHeight / 2)
+                        .attr('dy', '0.35em')
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', '#fff')
+                        .attr('font-size', '9px')
+                        .attr('font-weight', '500')
+                        .text(nameText);
                 }
             });
         });
