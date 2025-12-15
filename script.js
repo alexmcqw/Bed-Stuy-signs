@@ -2327,43 +2327,65 @@ async function initSankeyDiagram() {
             };
         });
         
-        // Create links from addresses to phases
+        // Create links between consecutive phases
         const links = [];
         addressData.forEach(addressInfo => {
-            addressInfo.phaseBusinesses.forEach((phaseData, phaseIdx) => {
-                // Link from address to each business in this phase
-                phaseData.oldSchool.forEach(business => {
-                    const businessKey = `${business.address}-${business.phaseNumber}`;
-                    const phasePos = phasePositions[phaseIdx].positions.get(businessKey);
-                    const addrPos = addressPositions.get(addressInfo.address);
+            // For each address, create links between consecutive phases
+            for (let phaseIdx = 0; phaseIdx < phases.length - 1; phaseIdx++) {
+                const currentPhase = addressInfo.phaseBusinesses[phaseIdx];
+                const nextPhase = addressInfo.phaseBusinesses[phaseIdx + 1];
+                
+                // Link old-school businesses between phases
+                currentPhase.oldSchool.forEach(sourceBusiness => {
+                    // Find corresponding business in next phase (same address, next phase)
+                    const targetBusiness = nextPhase.oldSchool.find(b => 
+                        b.address === sourceBusiness.address && 
+                        b.phaseNumber === sourceBusiness.phaseNumber + 1
+                    );
                     
-                    if (phasePos && addrPos) {
-                        links.push({
-                            source: addressInfo.address,
-                            target: business,
-                            sourcePos: addrPos,
-                            targetPos: phasePos,
-                            isOldSchool: true
-                        });
+                    if (targetBusiness) {
+                        const sourceKey = `${sourceBusiness.address}-${sourceBusiness.phaseNumber}`;
+                        const targetKey = `${targetBusiness.address}-${targetBusiness.phaseNumber}`;
+                        const sourcePos = phasePositions[phaseIdx].positions.get(sourceKey);
+                        const targetPos = phasePositions[phaseIdx + 1].positions.get(targetKey);
+                        
+                        if (sourcePos && targetPos) {
+                            links.push({
+                                source: sourceBusiness,
+                                target: targetBusiness,
+                                sourcePos: sourcePos,
+                                targetPos: targetPos,
+                                isOldSchool: true
+                            });
+                        }
                     }
                 });
                 
-                phaseData.newSchool.forEach(business => {
-                    const businessKey = `${business.address}-${business.phaseNumber}`;
-                    const phasePos = phasePositions[phaseIdx].positions.get(businessKey);
-                    const addrPos = addressPositions.get(addressInfo.address);
+                // Link new-school businesses between phases
+                currentPhase.newSchool.forEach(sourceBusiness => {
+                    const targetBusiness = nextPhase.newSchool.find(b => 
+                        b.address === sourceBusiness.address && 
+                        b.phaseNumber === sourceBusiness.phaseNumber + 1
+                    );
                     
-                    if (phasePos && addrPos) {
-                        links.push({
-                            source: addressInfo.address,
-                            target: business,
-                            sourcePos: addrPos,
-                            targetPos: phasePos,
-                            isOldSchool: false
-                        });
+                    if (targetBusiness) {
+                        const sourceKey = `${sourceBusiness.address}-${sourceBusiness.phaseNumber}`;
+                        const targetKey = `${targetBusiness.address}-${targetBusiness.phaseNumber}`;
+                        const sourcePos = phasePositions[phaseIdx].positions.get(sourceKey);
+                        const targetPos = phasePositions[phaseIdx + 1].positions.get(targetKey);
+                        
+                        if (sourcePos && targetPos) {
+                            links.push({
+                                source: sourceBusiness,
+                                target: targetBusiness,
+                                sourcePos: sourcePos,
+                                targetPos: targetPos,
+                                isOldSchool: false
+                            });
+                        }
                     }
                 });
-            });
+            }
         });
 
         // Render parallel sets diagram
@@ -2528,10 +2550,13 @@ async function initSankeyDiagram() {
             });
         });
 
-        // Draw links from addresses to phases
+        // Draw links between consecutive phases
         links.forEach(link => {
-            const sourceX = addressX + addressColumnWidth;
-            const targetX = leftMargin + addressColumnWidth + columnSpacing + link.target.phaseNumber * (phaseColumnWidth + columnSpacing);
+            const sourcePhaseIdx = link.source.phaseNumber;
+            const targetPhaseIdx = link.target.phaseNumber;
+            
+            const sourceX = leftMargin + addressColumnWidth + columnSpacing + sourcePhaseIdx * (phaseColumnWidth + columnSpacing) + phaseColumnWidth;
+            const targetX = leftMargin + addressColumnWidth + columnSpacing + targetPhaseIdx * (phaseColumnWidth + columnSpacing);
             
             const sourceY = getYPosition(link.sourcePos.yIndex) + nodeHeight / 2;
             const targetY = getYPosition(link.targetPos.yIndex) + nodeHeight / 2;
