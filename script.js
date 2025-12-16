@@ -1111,6 +1111,8 @@ async function initTimeline() {
                         const transform = xAxisGroup.getAttribute('transform') || '';
                         const yMatch = transform.match(/translate\([^,]+,\s*([\d.]+)\)/);
                         const xAxisY = yMatch ? parseFloat(yMatch[1]) : 60;
+                        const svgWidth = parseFloat(svg.getAttribute('width') || '1200');
+                        const svgHeight = parseFloat(svg.getAttribute('height') || '400');
                         
                         // Create a sticky header div that will show the x-axis
                         const stickyHeader = document.createElement('div');
@@ -1120,27 +1122,31 @@ async function initTimeline() {
                             top: 0;
                             z-index: 100;
                             background-color: #f8fafc;
-                            padding: 10px 0;
-                            margin-bottom: -${xAxisY + 20}px;
-                            height: ${xAxisY + 20}px;
-                            overflow: visible;
+                            padding: 0;
+                            margin: 0;
+                            height: ${xAxisY + 25}px;
+                            overflow: hidden;
+                            border-bottom: 1px solid #e2e8f0;
                         `;
                         
                         // Clone the x-axis into a new SVG for the sticky header
                         const stickySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        const svgWidth = parseFloat(svg.getAttribute('width') || '1200');
                         stickySvg.setAttribute('width', svgWidth);
-                        stickySvg.setAttribute('height', (xAxisY + 20).toString());
-                        stickySvg.style.cssText = 'position: absolute; top: 0; left: 0; pointer-events: none; width: 100%;';
+                        stickySvg.setAttribute('height', (xAxisY + 25).toString());
+                        stickySvg.setAttribute('viewBox', `0 0 ${svgWidth} ${xAxisY + 25}`);
+                        stickySvg.style.cssText = 'display: block; width: 100%; height: 100%;';
                         
+                        // Clone the entire x-axis group
                         const clonedGroup = xAxisGroup.cloneNode(true);
-                        // Adjust the transform to position at top
-                        clonedGroup.setAttribute('transform', transform.replace(/translate\([^,]+,\s*[\d.]+\)/, `translate(0, ${xAxisY})`));
+                        // Keep the original transform
                         stickySvg.appendChild(clonedGroup);
                         stickyHeader.appendChild(stickySvg);
                         
-                        // Insert the sticky header at the top of the wrapper
+                        // Insert the sticky header at the top of the wrapper, before the plot
                         plotWrapper.insertBefore(stickyHeader, plotWrapper.firstChild);
+                        
+                        // Also make the original x-axis group have a higher z-index for visibility
+                        xAxisGroup.style.pointerEvents = 'none';
                     }
                     
                     // Add tooltips to dots by matching both x and y coordinates
@@ -2949,4 +2955,4 @@ async function initStackedAreaChart() {
     }
 }
 
-console.log('Script loaded v2: ' + new Date().toISOString() + ' - Contains: CUNY Graduate Center, Lots of color, 5 phases');
+console.log('Script loaded v3: ' + new Date().toISOString() + ' - Contains: sticky x-axis, tooltip images, closer tooltips');
