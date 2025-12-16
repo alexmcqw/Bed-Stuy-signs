@@ -191,6 +191,24 @@
                 <!-- Timeline Tab -->
                 <div id="timeline" class="tab-panel" role="tabpanel">
                     <section class="content-section">
+                        <h2>Business Trends Over Time</h2>
+                        <p>This stacked area chart shows the count of old-school and new-school businesses over time, using the same opening/closing logic as the timeline. The chart tracks active businesses at each point in time based on their placeCreationDate and validityTime_end.</p>
+                        <div id="stacked-area-chart" style="width: 100%; min-height: 400px; margin-top: 2rem;">
+                            <div style="padding: 2rem; text-align: center; color: #64748b;">Loading chart...</div>
+                        </div>
+                        <div class="stacked-area-legend" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; display: flex; gap: 2rem; justify-content: center;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="display: inline-block; width: 30px; height: 20px; background: #8B6F47; border-radius: 4px;"></span>
+                                <span>Old-school Style</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="display: inline-block; width: 30px; height: 20px; background: #E91E63; border-radius: 4px;"></span>
+                                <span>New-school Style</span>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="content-section">
                         <h2>Business Lifespan Timeline</h2>
                         <p>Here you can see the neighborhood's openings and closings across time. Since the LiveXYZ storefront data is collected by hand, there will typically be a lag between when a business opens/closes and when it's registered, which is why you'll see lots of closings/openings logged on the same day. Can you identify any trends?</p>
                         <div class="timeline-legend" style="margin: 1.5rem 0; padding: 1rem; background: #f8fafc; border-radius: 8px;">
@@ -256,24 +274,6 @@
                             <li><strong>Median businesses per shared location:</strong> 2</li>
                         </ul>
                         <p>These statistics indicate significant business turnover, with the majority of photographed storefronts occupying locations that have hosted multiple businesses over time. This pattern suggests active commercial real estate churn, which may correlate with neighborhood transformation and gentrification processes.</p>
-                    </section>
-
-                    <section class="content-section">
-                        <h2>Business Trends Over Time</h2>
-                        <p>This stacked area chart shows the count of old-school and new-school businesses over time, using the same opening/closing logic as the timeline. The chart tracks active businesses at each point in time based on their placeCreationDate and validityTime_end.</p>
-                        <div id="stacked-area-chart" style="width: 100%; min-height: 400px; margin-top: 2rem;">
-                            <div style="padding: 2rem; text-align: center; color: #64748b;">Loading chart...</div>
-                        </div>
-                        <div class="stacked-area-legend" style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; display: flex; gap: 2rem; justify-content: center;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="display: inline-block; width: 30px; height: 20px; background: #8B6F47; border-radius: 4px;"></span>
-                                <span>Old-school Style</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="display: inline-block; width: 30px; height: 20px; background: #E91E63; border-radius: 4px;"></span>
-                                <span>New-school Style</span>
-                            </div>
-                        </div>
                     </section>
 
                     <section class="content-section">

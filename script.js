@@ -157,11 +157,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     initMap();
                 }, 100);
             } else if (targetTab === 'timeline') {
+                initStackedAreaChart();
                 initTimeline();
             } else if (targetTab === 'background') {
                 initRegressionAnalysis();
                 initSankeyDiagram();
-                initStackedAreaChart();
             } else if (targetTab === 'comparison') {
                 initComparisonVisualization();
             }
@@ -2765,12 +2765,18 @@ async function initStackedAreaChart() {
                 }
             });
             
+            const total = oldSchoolCount + newSchoolCount;
+            const oldSchoolPercent = total > 0 ? (oldSchoolCount / total * 100).toFixed(1) : 0;
+            const newSchoolPercent = total > 0 ? (newSchoolCount / total * 100).toFixed(1) : 0;
+            
             timeSeries.push({
                 date: new Date(currentMonth),
                 monthKey: monthKey,
                 oldSchool: oldSchoolCount,
                 newSchool: newSchoolCount,
-                total: oldSchoolCount + newSchoolCount
+                total: total,
+                oldSchoolPercent: oldSchoolPercent,
+                newSchoolPercent: newSchoolPercent
             });
             
             // Move to next month
@@ -2821,14 +2827,86 @@ async function initStackedAreaChart() {
             .datum(timeSeries)
             .attr('fill', '#8B6F47')
             .attr('opacity', 0.8)
-            .attr('d', areaOldSchool);
+            .attr('d', areaOldSchool)
+            .style('cursor', 'pointer');
 
         // Draw new-school area (pink, top)
         g.append('path')
             .datum(timeSeries)
             .attr('fill', '#E91E63')
             .attr('opacity', 0.8)
-            .attr('d', areaNewSchool);
+            .attr('d', areaNewSchool)
+            .style('cursor', 'pointer');
+
+        // Create invisible overlay for tooltips
+        const overlay = g.append('rect')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('fill', 'transparent')
+            .style('cursor', 'crosshair');
+
+        // Create tooltip
+        const tooltip = d3.select('body').append('div')
+            .attr('class', 'stacked-area-tooltip')
+            .style('opacity', 0)
+            .style('position', 'absolute')
+            .style('background', 'rgba(0, 0, 0, 0.8)')
+            .style('color', 'white')
+            .style('padding', '10px')
+            .style('border-radius', '4px')
+            .style('pointer-events', 'none')
+            .style('font-size', '12px')
+            .style('z-index', '1000');
+
+        // Add mouse move handler for tooltip
+        overlay.on('mousemove', function(event) {
+            const [mouseX] = d3.pointer(event, this);
+            const hoverDate = xScale.invert(mouseX);
+            
+            // Find closest data point
+            let closestPoint = timeSeries[0];
+            let minDistance = Math.abs(timeSeries[0].date - hoverDate);
+            
+            timeSeries.forEach(d => {
+                const distance = Math.abs(d.date - hoverDate);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestPoint = d;
+                }
+            });
+            
+            const mouseY = d3.pointer(event, this)[1];
+            const oldSchoolY = yScale(closestPoint.oldSchool);
+            const newSchoolY = yScale(closestPoint.total);
+            
+            // Determine which area is being hovered
+            let hoveredArea = 'both';
+            if (mouseY >= oldSchoolY && mouseY <= height) {
+                hoveredArea = 'oldSchool';
+            } else if (mouseY >= newSchoolY && mouseY <= oldSchoolY) {
+                hoveredArea = 'newSchool';
+            }
+            
+            const dateStr = d3.timeFormat('%B %Y')(closestPoint.date);
+            const tooltipContent = `
+                <div><strong>${dateStr}</strong></div>
+                <div style="margin-top: 5px;">
+                    <div>Old-school: ${closestPoint.oldSchool} (${closestPoint.oldSchoolPercent}%)</div>
+                    <div>New-school: ${closestPoint.newSchool} (${closestPoint.newSchoolPercent}%)</div>
+                    <div style="margin-top: 3px; font-size: 11px; opacity: 0.9;">Total: ${closestPoint.total}</div>
+                </div>
+            `;
+            
+            tooltip
+                .html(tooltipContent)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 10) + 'px')
+                .style('opacity', 1);
+        });
+
+        overlay.on('mouseleave', function() {
+            tooltip.style('opacity', 0);
+        });
 
         // Add x-axis
         const xAxis = d3.axisBottom(xScale)
