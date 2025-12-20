@@ -2364,6 +2364,7 @@ async function initSankeyDiagram() {
         });
         
         // Create links between consecutive phases
+        // Link businesses at the same address across phases, regardless of style changes
         const links = [];
         addressData.forEach(addressInfo => {
             // For each address, create links between consecutive phases
@@ -2371,35 +2372,14 @@ async function initSankeyDiagram() {
                 const currentPhase = addressInfo.phaseBusinesses[phaseIdx];
                 const nextPhase = addressInfo.phaseBusinesses[phaseIdx + 1];
                 
-                // Link old-school businesses between phases
-                currentPhase.oldSchool.forEach(sourceBusiness => {
-                    // Find corresponding business in next phase (same address, next phase)
-                    const targetBusiness = nextPhase.oldSchool.find(b => 
-                        b.address === sourceBusiness.address && 
-                        b.phaseNumber === sourceBusiness.phaseNumber + 1
-                    );
-                    
-                    if (targetBusiness) {
-                        const sourceKey = `${sourceBusiness.address}-${sourceBusiness.phaseNumber}`;
-                        const targetKey = `${targetBusiness.address}-${targetBusiness.phaseNumber}`;
-                        const sourcePos = phasePositions[phaseIdx].positions.get(sourceKey);
-                        const targetPos = phasePositions[phaseIdx + 1].positions.get(targetKey);
-                        
-                        if (sourcePos && targetPos) {
-                            links.push({
-                                source: sourceBusiness,
-                                target: targetBusiness,
-                                sourcePos: sourcePos,
-                                targetPos: targetPos,
-                                isOldSchool: true
-                            });
-                        }
-                    }
-                });
+                // Combine all businesses from current phase (old-school and new-school)
+                const allCurrentBusinesses = [...currentPhase.oldSchool, ...currentPhase.newSchool];
                 
-                // Link new-school businesses between phases
-                currentPhase.newSchool.forEach(sourceBusiness => {
-                    const targetBusiness = nextPhase.newSchool.find(b => 
+                // For each business in current phase, find the business in next phase at same address
+                allCurrentBusinesses.forEach(sourceBusiness => {
+                    // Look for business in next phase at same address (regardless of style)
+                    const allNextBusinesses = [...nextPhase.oldSchool, ...nextPhase.newSchool];
+                    const targetBusiness = allNextBusinesses.find(b => 
                         b.address === sourceBusiness.address && 
                         b.phaseNumber === sourceBusiness.phaseNumber + 1
                     );
@@ -2411,12 +2391,13 @@ async function initSankeyDiagram() {
                         const targetPos = phasePositions[phaseIdx + 1].positions.get(targetKey);
                         
                         if (sourcePos && targetPos) {
+                            // Determine link color based on source business style
                             links.push({
                                 source: sourceBusiness,
                                 target: targetBusiness,
                                 sourcePos: sourcePos,
                                 targetPos: targetPos,
-                                isOldSchool: false
+                                isOldSchool: sourceBusiness.isOldSchool
                             });
                         }
                     }
