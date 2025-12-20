@@ -2014,10 +2014,8 @@ async function initComparisonVisualization() {
                     const tooltip = document.createElement('div');
                     tooltip.className = 'comparison-tooltip';
                     
-                    // Add larger thumbnail to tooltip if item is smaller than normal
-                    const tooltipImage = sizeClass !== 'size-normal' 
-                        ? `<div class="tooltip-image"><img src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`
-                        : '';
+                    // Add larger thumbnail to tooltip for all items
+                    const tooltipImage = `<div class="tooltip-image"><img src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`;
                     
                     tooltip.innerHTML = `
                         <div class="tooltip-content">
@@ -2076,10 +2074,8 @@ async function initComparisonVisualization() {
                     const tooltip = document.createElement('div');
                     tooltip.className = 'comparison-tooltip';
                     
-                    // Add larger thumbnail to tooltip if item is smaller than normal
-                    const tooltipImage = sizeClass !== 'size-normal' 
-                        ? `<div class="tooltip-image"><img data-src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`
-                        : '';
+                    // Add larger thumbnail to tooltip for all items
+                    const tooltipImage = `<div class="tooltip-image"><img src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`;
                     
                     tooltip.innerHTML = `
                         <div class="tooltip-content">
@@ -2090,18 +2086,6 @@ async function initComparisonVisualization() {
                         </div>
                     `;
                     imgDiv.appendChild(tooltip);
-                    
-                    // Lazy load tooltip images when tooltip is shown
-                    if (tooltipImage) {
-                        const tooltipImg = tooltip.querySelector('img[data-src]');
-                        if (tooltipImg) {
-                            imgDiv.addEventListener('mouseenter', function() {
-                                if (tooltipImg.getAttribute('data-src') && !tooltipImg.src) {
-                                    tooltipImg.src = tooltipImg.getAttribute('data-src');
-                                }
-                            }, { once: true });
-                        }
-                    }
                     
                     gridDiv.appendChild(imgDiv);
                 });
