@@ -1424,10 +1424,6 @@ async function initRegressionAnalysis() {
                         <canvas id="stackedChart"></canvas>
                     </div>
                     <div class="viz-container">
-                        <h4>Heatmap</h4>
-                        <canvas id="heatmapChart"></canvas>
-                    </div>
-                    <div class="viz-container">
                         <h4>Flow Diagram</h4>
                         <div id="flowDiagram"></div>
                     </div>
@@ -1537,75 +1533,6 @@ async function initRegressionAnalysis() {
                             callbacks: {
                                 label: function(context) {
                                     return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Create heatmap using Chart.js
-        const ctx3 = document.getElementById('heatmapChart');
-        if (ctx3 && typeof Chart !== 'undefined') {
-            // Calculate normalized values for heatmap intensity
-            const maxValue = Math.max(oldSchoolClosed, oldSchoolNew, newSchoolClosed, newSchoolNew);
-            const normalize = (val) => (val / maxValue) * 100;
-
-            new Chart(ctx3, {
-                type: 'bar',
-                data: {
-                    labels: ['Closed', 'New'],
-                    datasets: [
-                        {
-                            label: 'Old-school',
-                            data: [normalize(oldSchoolClosed), normalize(oldSchoolNew)],
-                            backgroundColor: function(context) {
-                                const value = context.parsed.y;
-                                const intensity = Math.min(value / 100, 1);
-                                return `rgba(139, 111, 71, ${0.3 + intensity * 0.7})`;
-                            },
-                            borderColor: '#5A4A2F',
-                            borderWidth: 2
-                        },
-                        {
-                            label: 'New-school',
-                            data: [normalize(newSchoolClosed), normalize(newSchoolNew)],
-                            backgroundColor: function(context) {
-                                const value = context.parsed.y;
-                                const intensity = Math.min(value / 100, 1);
-                                return `rgba(233, 30, 99, ${0.3 + intensity * 0.7})`;
-                            },
-                            borderColor: '#B71C1C',
-                            borderWidth: 2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                callback: function(value) {
-                                    return Math.round((value / 100) * maxValue);
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const normalized = context.parsed.y;
-                                    const actual = Math.round((normalized / 100) * maxValue);
-                                    return context.dataset.label + ': ' + actual + ' businesses';
                                 }
                             }
                         }
