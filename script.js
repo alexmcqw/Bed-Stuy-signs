@@ -157,9 +157,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     initMap();
                 }, 100);
             } else if (targetTab === 'timeline') {
-                initStackedAreaChart();
                 initTimeline();
             } else if (targetTab === 'background') {
+                initStackedAreaChart();
                 initRegressionAnalysis();
                 initSankeyDiagram();
             } else if (targetTab === 'comparison') {
@@ -452,28 +452,28 @@ function createMarkers(rows, headers) {
             const businesses = [];
 
             rowsAtLocation.forEach(row => {
-                // Get prediction data
-                let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
-                
-                // Convert to string and trim
-                predictedClass = String(predictedClass || '').trim();
-                
-                // Remove leading numeral (0 or 1) and space from Predicted Class
-                if (predictedClass) {
+            // Get prediction data
+            let predictedClass = row['Predicted Class'] || row['PredictedClass'] || row['predicted class'] || '';
+            
+            // Convert to string and trim
+            predictedClass = String(predictedClass || '').trim();
+            
+            // Remove leading numeral (0 or 1) and space from Predicted Class
+            if (predictedClass) {
                     predictedClass = predictedClass.replace(/^[01]\s+/, '');
-                }
-                
-                const status = row['Status_simplified'] || '';
-                const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 'Unknown';
-                const address = row['LiveXYZSeptember132025_XYTableToPoint_address'] || '';
-                const postcode = row['LiveXYZSeptember132025_XYTableToPoint_postcode'] || '';
-                const category = row['LiveXYZSeptember132025_XYTableToPoint_subcategoriesPrimary_name'] || 
-                                row['LiveXYZSeptember132025_XYTableToPoint_categoriesPrimary_name'] || '';
+            }
+            
+            const status = row['Status_simplified'] || '';
+            const name = row['LiveXYZSeptember132025_XYTableToPoint_name'] || row['LiveXYZSeptember132025_XYTableToPoint_resolvedName'] || 'Unknown';
+            const address = row['LiveXYZSeptember132025_XYTableToPoint_address'] || '';
+            const postcode = row['LiveXYZSeptember132025_XYTableToPoint_postcode'] || '';
+            const category = row['LiveXYZSeptember132025_XYTableToPoint_subcategoriesPrimary_name'] || 
+                            row['LiveXYZSeptember132025_XYTableToPoint_categoriesPrimary_name'] || '';
                 const photoUrl = row['Photo_URL'] || '';
                 const placeCreationDate = row['placeCreationDate_short'] || row['placeCreationDate'] || '';
 
-                // Determine if Old-school or New-school
-                const isOldSchool = predictedClass.includes('Old-school');
+            // Determine if Old-school or New-school
+            const isOldSchool = predictedClass.includes('Old-school');
                 if (isOldSchool) {
                     oldSchoolCountAtLocation++;
                 } else {
@@ -2321,45 +2321,41 @@ async function initSankeyDiagram() {
         const totalAddresses = addressYIndex;
         
         // Calculate positions for each phase column
+        // Sort businesses by their address position (yIndex) to align them vertically
         const phasePositions = phaseBusinesses.map((phase, phaseIdx) => {
-            const oldSchoolCount = phase.oldSchool.length;
-            const newSchoolCount = phase.newSchool.length;
-            const totalCount = oldSchoolCount + newSchoolCount;
+            // Combine all businesses (old-school and new-school) for this phase
+            const allBusinesses = [...phase.oldSchool, ...phase.newSchool];
             
-            // Calculate positions: old-school at top, new-school at bottom
+            // Sort businesses by their address's yIndex to align them vertically
+            allBusinesses.sort((a, b) => {
+                const posA = addressPositions.get(a.address);
+                const posB = addressPositions.get(b.address);
+                const yIndexA = posA ? posA.yIndex : 9999;
+                const yIndexB = posB ? posB.yIndex : 9999;
+                return yIndexA - yIndexB;
+            });
+            
+            // Calculate positions based on sorted order
             const positions = new Map();
-            
-            // Position old-school businesses (top)
-            phase.oldSchool.forEach((business, idx) => {
+            allBusinesses.forEach((business, idx) => {
                 const businessKey = `${business.address}-${business.phaseNumber}`;
                 positions.set(businessKey, {
                     business: business,
                     yIndex: idx,
                     height: 1,
                     phaseIdx: phaseIdx,
-                    isOldSchool: true
-                });
-            });
-            
-            // Position new-school businesses (bottom)
-            phase.newSchool.forEach((business, idx) => {
-                const businessKey = `${business.address}-${business.phaseNumber}`;
-                positions.set(businessKey, {
-                    business: business,
-                    yIndex: oldSchoolCount + idx,
-                    height: 1,
-                    phaseIdx: phaseIdx,
-                    isOldSchool: false
+                    isOldSchool: business.isOldSchool
                 });
             });
             
             return {
                 positions: positions,
-                oldSchoolCount: oldSchoolCount,
-                newSchoolCount: newSchoolCount,
-                totalCount: totalCount,
+                oldSchoolCount: phase.oldSchool.length,
+                newSchoolCount: phase.newSchool.length,
+                totalCount: allBusinesses.length,
                 oldSchool: phase.oldSchool,
-                newSchool: phase.newSchool
+                newSchool: phase.newSchool,
+                allBusinesses: allBusinesses // Store sorted list for rendering
             };
         });
         
@@ -2500,46 +2496,13 @@ async function initSankeyDiagram() {
                 .attr('fill', '#1e293b')
                 .text(phaseName);
             
-            // Draw old-school businesses (brown, at top)
-            phaseData.oldSchool.forEach(business => {
+            // Draw businesses sorted by address position (aligned vertically)
+            phaseData.allBusinesses.forEach(business => {
                 const businessKey = `${business.address}-${business.phaseNumber}`;
                 const pos = phaseData.positions.get(businessKey);
                 if (pos) {
                     const y = getYPosition(pos.yIndex);
-                    const color = '#8B6F47';
-                    
-                    svg.append('rect')
-                        .attr('x', phaseX)
-                        .attr('y', y)
-                        .attr('width', phaseColumnWidth)
-                        .attr('height', nodeHeight)
-                        .attr('fill', color)
-                        .attr('stroke', '#fff')
-                        .attr('stroke-width', 1)
-                        .attr('rx', 2);
-                    
-                    // Add business name text
-                    const businessName = business.businessName || 'Unknown';
-                    const nameText = businessName.length > 18 ? businessName.substring(0, 15) + '...' : businessName;
-                    svg.append('text')
-                        .attr('x', phaseX + phaseColumnWidth / 2)
-                        .attr('y', y + nodeHeight / 2)
-                        .attr('dy', '0.35em')
-                        .attr('text-anchor', 'middle')
-                        .attr('fill', '#fff')
-                        .attr('font-size', '9px')
-                        .attr('font-weight', '500')
-                        .text(nameText);
-                }
-            });
-            
-            // Draw new-school businesses (pink, at bottom)
-            phaseData.newSchool.forEach(business => {
-                const businessKey = `${business.address}-${business.phaseNumber}`;
-                const pos = phaseData.positions.get(businessKey);
-                if (pos) {
-                    const y = getYPosition(pos.yIndex);
-                    const color = '#E91E63';
+                    const color = business.isOldSchool ? '#8B6F47' : '#E91E63';
                     
                     svg.append('rect')
                         .attr('x', phaseX)
