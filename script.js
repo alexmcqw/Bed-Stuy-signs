@@ -2207,7 +2207,11 @@ async function initSankeyDiagram() {
             addressBusinessMap.set(address, phaseBusinesses);
         });
         
-        // Organize addresses by old-school (top) / new-school (bottom)
+        // Sort addresses by number of phases (businessCount) in descending order
+        // Addresses with 5 phases at top, then 4, then 3, etc.
+        addressData.sort((a, b) => b.businessCount - a.businessCount);
+        
+        // Organize addresses by old-school (top) / new-school (bottom) within each phase count group
         const addressGroups = {
             oldSchool: addressData.filter(a => a.isOldSchool),
             newSchool: addressData.filter(a => !a.isOldSchool)
@@ -2224,24 +2228,28 @@ async function initSankeyDiagram() {
         });
         
         // Calculate positions for addresses (left column)
+        // Sort by phase count (businessCount) descending, then by old-school/new-school
+        const sortedAddresses = [...addressData].sort((a, b) => {
+            // First sort by phase count (descending)
+            if (b.businessCount !== a.businessCount) {
+                return b.businessCount - a.businessCount;
+            }
+            // If same phase count, put old-school first
+            if (a.isOldSchool !== b.isOldSchool) {
+                return a.isOldSchool ? -1 : 1;
+            }
+            return 0;
+        });
+        
         const addressPositions = new Map();
         let addressYIndex = 0;
         
-        // Position old-school addresses (top)
-        addressGroups.oldSchool.forEach(addressInfo => {
+        // Position addresses in sorted order (by phase count, then old-school/new-school)
+        sortedAddresses.forEach(addressInfo => {
             addressPositions.set(addressInfo.address, {
                 address: addressInfo.address,
                 yIndex: addressYIndex++,
-                isOldSchool: true
-            });
-        });
-        
-        // Position new-school addresses (bottom)
-        addressGroups.newSchool.forEach(addressInfo => {
-            addressPositions.set(addressInfo.address, {
-                address: addressInfo.address,
-                yIndex: addressYIndex++,
-                isOldSchool: false
+                isOldSchool: addressInfo.isOldSchool
             });
         });
         
