@@ -2484,12 +2484,19 @@ async function initSankeyDiagram() {
             
             const linkColor = link.isOldSchool ? '#8B6F47' : '#E91E63';
             
+            // Check if source and target have different colors (color switch)
+            const isColorSwitch = link.source.isOldSchool !== link.target.isOldSchool;
+            
+            // Adjust thickness and opacity based on color switch
+            const strokeWidth = isColorSwitch ? 3.5 : 1.5; // Thicker for color switches, thinner for same color
+            const strokeOpacity = isColorSwitch ? 0.85 : 0.35; // Darker for color switches, paler for same color
+            
             svg.append('path')
                 .attr('d', pathData)
                 .attr('fill', 'none')
                 .attr('stroke', linkColor)
-                .attr('stroke-width', 2)
-                .attr('stroke-opacity', 0.6)
+                .attr('stroke-width', strokeWidth)
+                .attr('stroke-opacity', strokeOpacity)
                 .attr('stroke-linecap', 'round')
                 .style('pointer-events', 'none');
         });
