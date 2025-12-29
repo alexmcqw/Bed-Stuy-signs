@@ -2322,13 +2322,13 @@ async function initSankeyDiagram() {
                         const targetPos = phasePositions[phaseIdx + 1].positions.get(targetKey);
                         
                         if (sourcePos && targetPos) {
-                            // Determine link color based on source business style
+                            // Determine link color based on target (newer/right-hand) business style
                             links.push({
                                 source: sourceBusiness,
                                 target: targetBusiness,
                                 sourcePos: sourcePos,
                                 targetPos: targetPos,
-                                isOldSchool: sourceBusiness.isOldSchool
+                                isOldSchool: targetBusiness.isOldSchool
                             });
                         }
                     }
