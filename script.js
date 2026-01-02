@@ -851,10 +851,10 @@ async function initTimeline() {
             // Get photo URL (column AE)
             const headers = parsed.meta.fields || Object.keys(parsed.data[0] || {});
             const columnAE = headers[30]; // Column AE is the 31st column (0-indexed: 30)
-            const photoUrl = row[columnAE] || row['Photo_URL'] || '';
+            const photoUrl = (row[columnAE] || row['Photo_URL'] || '').trim();
 
-            // Skip if no image link
-            if (!photoUrl || photoUrl.trim() === '') {
+            // Skip if no image link - filter out rows without valid photo URLs
+            if (!photoUrl || photoUrl === '' || photoUrl === 'null' || photoUrl === 'undefined' || !photoUrl.startsWith('http')) {
                 return;
             }
 
