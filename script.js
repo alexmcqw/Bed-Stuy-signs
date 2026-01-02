@@ -2223,7 +2223,7 @@ async function initSankeyDiagram() {
         const phases = ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5'];
         
         // Collect addresses and their businesses
-        const addressData = [];
+        let addressData = [];
         const addressBusinessMap = new Map(); // Map address to businesses in each phase
         
         multiBusinessGroups.forEach(([coordKey, businesses], locationIdx) => {
@@ -2270,6 +2270,15 @@ async function initSankeyDiagram() {
             });
             
             addressBusinessMap.set(address, phaseBusinesses);
+        });
+        
+        // Filter to only addresses that have businesses in at least 2 phases
+        addressData = addressData.filter(addressInfo => {
+            // Count how many phases have businesses (old-school or new-school)
+            const phasesWithBusinesses = addressInfo.phaseBusinesses.filter(phaseData => 
+                phaseData.oldSchool.length > 0 || phaseData.newSchool.length > 0
+            ).length;
+            return phasesWithBusinesses >= 2;
         });
         
         // Sort addresses by number of phases (businessCount) in descending order
