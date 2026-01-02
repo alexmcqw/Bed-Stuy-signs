@@ -2007,52 +2007,6 @@ async function initComparisonVisualization() {
             });
         };
         
-        // Function to create and add "Load more" button
-        const addLoadMoreButton = (container, items, displayedCountRef, isOldSchool, itemCountRef) => {
-            if (displayedCountRef.value >= items.length) return; // All items already displayed
-            
-            const buttonContainer = document.createElement('div');
-            buttonContainer.style.textAlign = 'center';
-            buttonContainer.style.margin = '2rem 0';
-            
-            const loadMoreBtn = document.createElement('button');
-            const updateButtonText = () => {
-                const remaining = items.length - displayedCountRef.value;
-                loadMoreBtn.textContent = remaining > 0 ? `Load More (${remaining} remaining)` : 'All items loaded';
-            };
-            updateButtonText();
-            
-            loadMoreBtn.style.padding = '0.75rem 2rem';
-            loadMoreBtn.style.fontSize = '1rem';
-            loadMoreBtn.style.backgroundColor = '#8B6F47';
-            loadMoreBtn.style.color = 'white';
-            loadMoreBtn.style.border = 'none';
-            loadMoreBtn.style.borderRadius = '8px';
-            loadMoreBtn.style.cursor = 'pointer';
-            loadMoreBtn.style.transition = 'background-color 0.2s';
-            
-            loadMoreBtn.addEventListener('mouseenter', () => {
-                loadMoreBtn.style.backgroundColor = '#6B5537';
-            });
-            loadMoreBtn.addEventListener('mouseleave', () => {
-                loadMoreBtn.style.backgroundColor = '#8B6F47';
-            });
-            
-            loadMoreBtn.addEventListener('click', () => {
-                renderItems(items, container, isOldSchool, displayedCountRef, itemCountRef, LOAD_MORE_INCREMENT);
-                
-                // Update or remove button
-                if (displayedCountRef.value >= items.length) {
-                    buttonContainer.remove();
-                } else {
-                    updateButtonText();
-                }
-            });
-            
-            buttonContainer.appendChild(loadMoreBtn);
-            container.appendChild(buttonContainer);
-        };
-        
         // Render initial items (first 100 of each category)
         const oldSchoolDisplayedRef = { value: 0 };
         const newSchoolDisplayedRef = { value: 0 };
@@ -2062,9 +2016,70 @@ async function initComparisonVisualization() {
         renderItems(allOldSchoolItems, oldSchoolContainer, true, oldSchoolDisplayedRef, oldSchoolItemCountRef, INITIAL_LIMIT);
         renderItems(allNewSchoolItems, newSchoolContainer, false, newSchoolDisplayedRef, newSchoolItemCountRef, INITIAL_LIMIT);
         
-        // Add "Load more" buttons
-        addLoadMoreButton(oldSchoolContainer, allOldSchoolItems, oldSchoolDisplayedRef, true, oldSchoolItemCountRef);
-        addLoadMoreButton(newSchoolContainer, allNewSchoolItems, newSchoolDisplayedRef, false, newSchoolItemCountRef);
+        // Add single combined "Load more" button for both categories
+        const addCombinedLoadMoreButton = () => {
+            const getRemainingCount = () => {
+                const oldRemaining = allOldSchoolItems.length - oldSchoolDisplayedRef.value;
+                const newRemaining = allNewSchoolItems.length - newSchoolDisplayedRef.value;
+                return oldRemaining + newRemaining;
+            };
+            
+            const remaining = getRemainingCount();
+            if (remaining === 0) return; // All items already displayed
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.textAlign = 'center';
+            buttonContainer.style.margin = '2rem 0';
+            buttonContainer.id = 'load-more-button-container';
+            
+            const loadMoreBtn = document.createElement('button');
+            const updateButtonText = () => {
+                const remainingCount = getRemainingCount();
+                loadMoreBtn.textContent = remainingCount > 0 ? `Load More (${remainingCount} remaining)` : 'All items loaded';
+            };
+            updateButtonText();
+            
+            loadMoreBtn.style.padding = '0.75rem 2rem';
+            loadMoreBtn.style.fontSize = '1rem';
+            loadMoreBtn.style.backgroundColor = '#64748b'; // Grey tone
+            loadMoreBtn.style.color = 'white';
+            loadMoreBtn.style.border = 'none';
+            loadMoreBtn.style.borderRadius = '8px';
+            loadMoreBtn.style.cursor = 'pointer';
+            loadMoreBtn.style.transition = 'background-color 0.2s';
+            
+            loadMoreBtn.addEventListener('mouseenter', () => {
+                loadMoreBtn.style.backgroundColor = '#475569'; // Darker grey on hover
+            });
+            loadMoreBtn.addEventListener('mouseleave', () => {
+                loadMoreBtn.style.backgroundColor = '#64748b'; // Original grey
+            });
+            
+            loadMoreBtn.addEventListener('click', () => {
+                // Load more for both categories
+                renderItems(allOldSchoolItems, oldSchoolContainer, true, oldSchoolDisplayedRef, oldSchoolItemCountRef, LOAD_MORE_INCREMENT);
+                renderItems(allNewSchoolItems, newSchoolContainer, false, newSchoolDisplayedRef, newSchoolItemCountRef, LOAD_MORE_INCREMENT);
+                
+                // Update or remove button
+                const remainingCount = getRemainingCount();
+                if (remainingCount === 0) {
+                    buttonContainer.remove();
+                } else {
+                    updateButtonText();
+                }
+            });
+            
+            buttonContainer.appendChild(loadMoreBtn);
+            // Add button after the comparison container
+            const comparisonContainer = container.querySelector('.comparison-container');
+            if (comparisonContainer && comparisonContainer.parentNode) {
+                comparisonContainer.parentNode.insertBefore(buttonContainer, comparisonContainer.nextSibling);
+            } else {
+                container.appendChild(buttonContainer);
+            }
+        };
+        
+        addCombinedLoadMoreButton();
         
 
     } catch (error) {
