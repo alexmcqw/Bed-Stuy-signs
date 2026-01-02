@@ -258,6 +258,22 @@
                     </section>
 
                     <section class="content-section">
+                        <h2>Security gates</h2>
+                        <p>Have you seen storefronts in your neighborhood that look like this? These heavy, opaque security gates are technically going to be illegal in New York City starting in 2026. The Department of Small Business Services thinks they make the streetscape look foreboding. But for the purposes of this project, they really obscure the unique storefront design details underneath. I tried to train the model on them as a third category, but it seemed to confuse the model, and it started making wonky predictions about the old- and new-school looks! So I took them out. But there are about 200 photos like this in the dataset (~7% of the total).</p>
+                        <div class="visualization-grid" style="margin-top: 2rem;">
+                            <div class="viz-container">
+                                <img src="https://calendre.imgix.net/QT8H_image_388282f079b3591e225c6d469a6eae3d3883f9d0.jpg" alt="Security gate storefront" style="width: 100%; height: auto; object-fit: cover; border-radius: 8px;">
+                            </div>
+                            <div class="viz-container">
+                                <img src="https://calendre.imgix.net/0UXT_image_80d6ea28a044acc76a6f4d60c367a8a4437ce603.jpg" alt="Security gate storefront" style="width: 100%; height: auto; object-fit: cover; border-radius: 8px;">
+                            </div>
+                            <div class="viz-container">
+                                <img src="https://calendre.imgix.net/FH89_image_11a9709f9f4c88da3f788a6d5a06b37061e380e7.jpg" alt="Security gate storefront" style="width: 100%; height: auto; object-fit: cover; border-radius: 8px;">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="content-section">
                         <h2>Turnover</h2>
                         <p>Analysis of coordinate data reveals patterns of business turnover and location reuse across Bedford-Stuyvesant.</p>
                         
@@ -279,22 +295,6 @@
                         <p>This Sankey diagram visualizes business turnover at shared locations, showing how businesses flow through time periods. Each row on the left represents a unique location (shared lat/long), colored by the dominant typography style (old-school in brown, new-school in pink). Each column moving right represents a time period based on placeCreationDate.</p>
                         <div id="sankey-diagram" style="width: 100%; min-height: 600px; margin-top: 2rem;">
                             <div style="padding: 2rem; text-align: center; color: #64748b;">Loading turnover flow diagram...</div>
-                        </div>
-                    </section>
-
-                    <section class="content-section">
-                        <h2>Security gates</h2>
-                        <p>Have you seen storefronts in your neighborhood that look like this? These heavy, opaque security gates are technically going to be illegal in New York City starting in 2026. The Department of Small Business Services thinks they make the streetscape look foreboding. But for the purposes of this project, they really obscure the unique storefront design details underneath. I tried to train the model on them as a third category, but it seemed to confuse the model, and it started making wonky predictions about the old- and new-school looks! So I took them out. But there are about 200 photos like this in the dataset (~7% of the total).</p>
-                        <div class="visualization-grid" style="margin-top: 2rem;">
-                            <div class="viz-container">
-                                <img src="https://calendre.imgix.net/QT8H_image_388282f079b3591e225c6d469a6eae3d3883f9d0.jpg" alt="Security gate storefront" style="width: 100%; height: auto; object-fit: cover; border-radius: 8px;">
-                            </div>
-                            <div class="viz-container">
-                                <img src="https://calendre.imgix.net/0UXT_image_80d6ea28a044acc76a6f4d60c367a8a4437ce603.jpg" alt="Security gate storefront" style="width: 100%; height: auto; object-fit: cover; border-radius: 8px;">
-                            </div>
-                            <div class="viz-container">
-                                <img src="https://calendre.imgix.net/FH89_image_11a9709f9f4c88da3f788a6d5a06b37061e380e7.jpg" alt="Security gate storefront" style="width: 100%; height: auto; object-fit: cover; border-radius: 8px;">
-                            </div>
                         </div>
                     </section>
 
