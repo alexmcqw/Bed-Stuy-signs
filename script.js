@@ -2321,31 +2321,32 @@ async function initSankeyDiagram() {
         const totalAddresses = addressYIndex;
         
         // Calculate positions for each phase column
-        // Sort businesses by their address position (yIndex) to align them vertically
+        // Position businesses in the same vertical order as their addresses to keep lines straight
         const phasePositions = phaseBusinesses.map((phase, phaseIdx) => {
-            // Combine all businesses (old-school and new-school) for this phase
-            const allBusinesses = [...phase.oldSchool, ...phase.newSchool];
-            
-            // Sort businesses by their address's yIndex to align them vertically
-            allBusinesses.sort((a, b) => {
-                const posA = addressPositions.get(a.address);
-                const posB = addressPositions.get(b.address);
-                const yIndexA = posA ? posA.yIndex : 9999;
-                const yIndexB = posB ? posB.yIndex : 9999;
-                return yIndexA - yIndexB;
+            // Create a map of address to business for this phase
+            const addressToBusiness = new Map();
+            [...phase.oldSchool, ...phase.newSchool].forEach(business => {
+                addressToBusiness.set(business.address, business);
             });
             
-            // Calculate positions based on sorted order
+            // Position businesses in the same order as sortedAddresses (by phase count, then old-school/new-school)
+            // This ensures all connecting lines are straight across
             const positions = new Map();
-            allBusinesses.forEach((business, idx) => {
-                const businessKey = `${business.address}-${business.phaseNumber}`;
-                positions.set(businessKey, {
-                    business: business,
-                    yIndex: idx,
-                    height: 1,
-                    phaseIdx: phaseIdx,
-                    isOldSchool: business.isOldSchool
-                });
+            const allBusinesses = [];
+            
+            sortedAddresses.forEach((addressInfo, addressIdx) => {
+                const business = addressToBusiness.get(addressInfo.address);
+                if (business) {
+                    const businessKey = `${business.address}-${business.phaseNumber}`;
+                    positions.set(businessKey, {
+                        business: business,
+                        yIndex: addressIdx, // Use address index to maintain vertical alignment
+                        height: 1,
+                        phaseIdx: phaseIdx,
+                        isOldSchool: business.isOldSchool
+                    });
+                    allBusinesses.push(business);
+                }
             });
             
             return {
