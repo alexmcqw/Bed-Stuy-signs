@@ -2197,8 +2197,12 @@ async function initSankeyDiagram() {
         // Filter to only groups with multiple businesses
         const multiBusinessGroups = Array.from(coordinateGroups.entries())
             .filter(([_, businesses]) => businesses.length > 1)
-            .sort(([_, a], [__, b]) => b.length - a.length) // Sort by number of businesses (descending)
-            .slice(0, 50); // Limit to top 50 locations for readability
+            .sort(([_, a], [__, b]) => b.length - a.length); // Sort by number of businesses (descending)
+        
+        // Log the actual count for verification
+        console.log(`Total locations with multiple businesses: ${multiBusinessGroups.length}`);
+        
+        // Show all locations (removed the 50 limit)
 
         if (multiBusinessGroups.length === 0) {
             sankeyContainer.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;">No data available for Sankey diagram.</div>';
