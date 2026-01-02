@@ -2285,12 +2285,6 @@ async function initSankeyDiagram() {
         // Addresses with 5 phases at top, then 4, then 3, etc.
         addressData.sort((a, b) => b.businessCount - a.businessCount);
         
-        // Organize addresses by old-school (top) / new-school (bottom) within each phase count group
-        const addressGroups = {
-            oldSchool: addressData.filter(a => a.isOldSchool),
-            newSchool: addressData.filter(a => !a.isOldSchool)
-        };
-        
         // For each phase, collect businesses and organize by old-school (top) / new-school (bottom)
         const phaseBusinesses = phases.map(() => ({ oldSchool: [], newSchool: [] }));
         
@@ -2450,33 +2444,13 @@ async function initSankeyDiagram() {
             .attr('fill', '#1e293b')
             .text('Address');
         
-        // Draw addresses (plain text, no colored backgrounds)
-        addressGroups.oldSchool.forEach(addressInfo => {
+        // Draw addresses in sorted order (by phase count, then old-school/new-school)
+        sortedAddresses.forEach(addressInfo => {
             const pos = addressPositions.get(addressInfo.address);
             if (pos) {
                 const y = getYPosition(pos.yIndex);
                 
                 // Add address text (truncate if too long)
-                const addressText = addressInfo.address.length > 25 ? 
-                    addressInfo.address.substring(0, 22) + '...' : 
-                    addressInfo.address;
-                
-                svg.append('text')
-                    .attr('x', addressX)
-                    .attr('y', y + nodeHeight / 2)
-                    .attr('dy', '0.35em')
-                    .attr('fill', '#1e293b')
-                    .attr('font-size', '11px')
-                    .text(addressText);
-            }
-        });
-        
-        addressGroups.newSchool.forEach(addressInfo => {
-            const pos = addressPositions.get(addressInfo.address);
-            if (pos) {
-                const y = getYPosition(pos.yIndex);
-                
-                // Add address text
                 const addressText = addressInfo.address.length > 25 ? 
                     addressInfo.address.substring(0, 22) + '...' : 
                     addressInfo.address;
