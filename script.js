@@ -609,9 +609,9 @@ function createMarkers(rows, headers) {
                     popupContent += `<div class="popup-business-item" style="margin-left: ${idx > 0 ? '10px' : '0'}; padding-left: ${idx > 0 ? '10px' : '0'}; border-left: ${idx > 0 ? '1px solid #e2e8f0' : 'none'};">
                         <h4 style="margin: 0 0 8px 0; font-size: 0.9rem;">${business.name}</h4>`;
                     
-                    // Add storefront image thumbnail
+                    // Add storefront image thumbnail - lazy load when popup opens
                     if (business.photoUrl) {
-                        popupContent += `<div class="popup-image-container"><img src="${business.photoUrl}" alt="${business.name}" class="popup-thumbnail" onerror="this.style.display='none'"></div>`;
+                        popupContent += `<div class="popup-image-container"><img data-src="${business.photoUrl}" alt="${business.name}" class="popup-thumbnail" loading="lazy" style="max-width: 200px; max-height: 150px; object-fit: cover;" onerror="this.style.display='none'"></div>`;
                     }
 
                     if (business.category) {
@@ -664,13 +664,22 @@ function createMarkers(rows, headers) {
 
             marker.bindPopup(popup);
 
-            // Add event listener to adjust popup position based on viewport
+            // Add event listener to adjust popup position based on viewport and load images
             marker.on('popupopen', function() {
                 setTimeout(() => {
                     const openPopup = marker.getPopup();
                     if (openPopup && openPopup.isOpen()) {
                         const popupElement = openPopup.getElement();
                         if (!popupElement) return;
+                        
+                        // Load lazy-loaded images in popup
+                        const lazyImages = popupElement.querySelectorAll('img[data-src]');
+                        lazyImages.forEach(img => {
+                            if (img.dataset.src && !img.src) {
+                                img.src = img.dataset.src;
+                                img.style.display = 'block';
+                            }
+                        });
                         
                         const markerLatLng = marker.getLatLng();
                         const mapPixelPoint = map.latLngToContainerPoint(markerLatLng);
@@ -1221,11 +1230,18 @@ async function initTimeline() {
                                 
                                 let tooltipContent = `<strong>${matchingBusiness.name}</strong>`;
                                 if (matchingBusiness.photoUrl && matchingBusiness.photoUrl.trim()) {
-                                    tooltipContent += `<br><img src="${matchingBusiness.photoUrl}" alt="${matchingBusiness.name}" style="max-width: 200px; max-height: 120px; margin-top: 8px; border-radius: 4px; display: block;" onerror="this.style.display='none'">`;
+                                    tooltipContent += `<br><img data-src="${matchingBusiness.photoUrl}" alt="${matchingBusiness.name}" style="max-width: 200px; max-height: 120px; margin-top: 8px; border-radius: 4px; display: none; object-fit: cover;" loading="lazy" onerror="this.style.display='none'">`;
                                 }
                                 
                                 tooltip.innerHTML = tooltipContent;
                                 document.body.appendChild(tooltip);
+                                
+                                // Load image when tooltip is shown
+                                const tooltipImg = tooltip.querySelector('img[data-src]');
+                                if (tooltipImg && tooltipImg.dataset.src) {
+                                    tooltipImg.src = tooltipImg.dataset.src;
+                                    tooltipImg.style.display = 'block';
+                                }
                                 
                                 // Add hover events
                                 circle.addEventListener('mouseenter', () => {
@@ -1924,25 +1940,33 @@ async function initComparisonVisualization() {
                     // Set src when image is near viewport (Intersection Observer will handle this)
                     imgDiv.appendChild(img);
                     
+                    // Add loading placeholder
+                    img.style.backgroundColor = '#f1f5f9';
+                    img.style.minHeight = '100px';
+                    
                     // Use Intersection Observer for better lazy loading control
                     const observer = new IntersectionObserver((entries) => {
                         entries.forEach(entry => {
                             if (entry.isIntersecting) {
                                 const img = entry.target;
-                                img.src = img.getAttribute('data-src');
-                                observer.unobserve(img);
+                                const dataSrc = img.getAttribute('data-src');
+                                if (dataSrc) {
+                                    img.src = dataSrc;
+                                    img.style.backgroundColor = 'transparent';
+                                    observer.unobserve(img);
+                                }
                             }
                         });
                     }, {
-                        rootMargin: '50px' // Start loading 50px before entering viewport
+                        rootMargin: '100px' // Start loading 100px before entering viewport for smoother experience
                     });
                     observer.observe(img);
                     
                     const tooltip = document.createElement('div');
                     tooltip.className = 'comparison-tooltip';
                     
-                    // Add larger thumbnail to tooltip for all items
-                    const tooltipImage = `<div class="tooltip-image"><img src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`;
+                    // Add larger thumbnail to tooltip - lazy load on hover
+                    const tooltipImage = `<div class="tooltip-image"><img data-src="${item.imageUrl}" alt="Storefront preview" loading="lazy" style="display: none;"></div>`;
                     
                     tooltip.innerHTML = `
                         <div class="tooltip-content">
@@ -1952,6 +1976,16 @@ async function initComparisonVisualization() {
                             <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
                         </div>
                     `;
+                    
+                    // Lazy load tooltip image only when tooltip is shown
+                    imgDiv.addEventListener('mouseenter', function() {
+                        const tooltipImg = tooltip.querySelector('img');
+                        if (tooltipImg && !tooltipImg.src && tooltipImg.dataset.src) {
+                            tooltipImg.src = tooltipImg.dataset.src;
+                            tooltipImg.style.display = 'block';
+                        }
+                    }, { once: true });
+                    
                     imgDiv.appendChild(tooltip);
                     gridDiv.appendChild(imgDiv);
                 });
@@ -1984,25 +2018,33 @@ async function initComparisonVisualization() {
                     // Set src when image is near viewport (Intersection Observer will handle this)
                     imgDiv.appendChild(img);
                     
+                    // Add loading placeholder
+                    img.style.backgroundColor = '#f1f5f9';
+                    img.style.minHeight = '100px';
+                    
                     // Use Intersection Observer for better lazy loading control
                     const observer = new IntersectionObserver((entries) => {
                         entries.forEach(entry => {
                             if (entry.isIntersecting) {
                                 const img = entry.target;
-                                img.src = img.getAttribute('data-src');
-                                observer.unobserve(img);
+                                const dataSrc = img.getAttribute('data-src');
+                                if (dataSrc) {
+                                    img.src = dataSrc;
+                                    img.style.backgroundColor = 'transparent';
+                                    observer.unobserve(img);
+                                }
                             }
                         });
                     }, {
-                        rootMargin: '50px' // Start loading 50px before entering viewport
+                        rootMargin: '100px' // Start loading 100px before entering viewport for smoother experience
                     });
                     observer.observe(img);
                     
                     const tooltip = document.createElement('div');
                     tooltip.className = 'comparison-tooltip';
                     
-                    // Add larger thumbnail to tooltip for all items
-                    const tooltipImage = `<div class="tooltip-image"><img src="${item.imageUrl}" alt="Storefront preview" loading="lazy"></div>`;
+                    // Add larger thumbnail to tooltip - lazy load on hover
+                    const tooltipImage = `<div class="tooltip-image"><img data-src="${item.imageUrl}" alt="Storefront preview" loading="lazy" style="display: none;"></div>`;
                     
                     tooltip.innerHTML = `
                         <div class="tooltip-content">
@@ -2012,6 +2054,16 @@ async function initComparisonVisualization() {
                             <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
                         </div>
                     `;
+                    
+                    // Lazy load tooltip image only when tooltip is shown
+                    imgDiv.addEventListener('mouseenter', function() {
+                        const tooltipImg = tooltip.querySelector('img');
+                        if (tooltipImg && !tooltipImg.src && tooltipImg.dataset.src) {
+                            tooltipImg.src = tooltipImg.dataset.src;
+                            tooltipImg.style.display = 'block';
+                        }
+                    }, { once: true });
+                    
                     imgDiv.appendChild(tooltip);
                     
                     gridDiv.appendChild(imgDiv);
