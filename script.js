@@ -1871,6 +1871,16 @@ async function initComparisonVisualization() {
         // Track total items processed for progressive sizing
         let oldSchoolItemCount = 0;
         let newSchoolItemCount = 0;
+        
+        // Track displayed items for pagination
+        let oldSchoolDisplayed = 0;
+        let newSchoolDisplayed = 0;
+        const INITIAL_LIMIT = 100;
+        const LOAD_MORE_INCREMENT = 100;
+        
+        // Store all items for each category for "Load more" functionality
+        const allOldSchoolItems = [];
+        const allNewSchoolItems = [];
 
         // Function to get size class based on item count
         const getSizeClass = (itemCount) => {
@@ -1879,6 +1889,74 @@ async function initComparisonVisualization() {
             if (hundred === 1) return 'size-small';
             if (hundred === 2) return 'size-smaller';
             return 'size-smallest';
+        };
+        
+        // Helper function to create and render an image item
+        const createImageItem = (item, isOldSchool, container, itemCountRef) => {
+            const bgColor = isOldSchool ? getOldSchoolGradientColor(item.status) : getNewSchoolGradientColor(item.status);
+            const imgDiv = document.createElement('div');
+            const sizeClass = getSizeClass(itemCountRef.value);
+            imgDiv.className = `comparison-image-item ${sizeClass}`;
+            imgDiv.style.backgroundColor = bgColor;
+            
+            itemCountRef.value++;
+            
+            const img = document.createElement('img');
+            img.setAttribute('data-src', item.imageUrl);
+            img.alt = isOldSchool ? 'Old-school storefront' : 'New-school storefront';
+            img.loading = 'lazy';
+            img.onerror = function() {
+                this.style.display = 'none';
+                this.parentElement.innerHTML = '<div class="image-error">Image unavailable</div>';
+            };
+            imgDiv.appendChild(img);
+            
+            // Add loading placeholder
+            img.style.backgroundColor = '#f1f5f9';
+            img.style.minHeight = '100px';
+            
+            // Use Intersection Observer for lazy loading
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        const dataSrc = img.getAttribute('data-src');
+                        if (dataSrc) {
+                            img.src = dataSrc;
+                            img.style.backgroundColor = 'transparent';
+                            observer.unobserve(img);
+                        }
+                    }
+                });
+            }, {
+                rootMargin: '100px'
+            });
+            observer.observe(img);
+            
+            const tooltip = document.createElement('div');
+            tooltip.className = 'comparison-tooltip';
+            
+            const tooltipImage = `<div class="tooltip-image"><img data-src="${item.imageUrl}" alt="Storefront preview" loading="lazy" style="display: none;"></div>`;
+            
+            tooltip.innerHTML = `
+                <div class="tooltip-content">
+                    ${tooltipImage}
+                    <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
+                    <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
+                    <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
+                </div>
+            `;
+            
+            imgDiv.addEventListener('mouseenter', function() {
+                const tooltipImg = tooltip.querySelector('img');
+                if (tooltipImg && !tooltipImg.src && tooltipImg.dataset.src) {
+                    tooltipImg.src = tooltipImg.dataset.src;
+                    tooltipImg.style.display = 'block';
+                }
+            }, { once: true });
+            
+            imgDiv.appendChild(tooltip);
+            container.appendChild(imgDiv);
         };
 
         // Render each confidence level as a block
