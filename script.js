@@ -1959,197 +1959,113 @@ async function initComparisonVisualization() {
             container.appendChild(imgDiv);
         };
 
-        // Render each confidence level as a block
+        // Format confidence level label for deciles
+        const formatConfidenceLabel = (level) => {
+            if (level === 100) {
+                return '100%';
+            } else {
+                return `${level}-${level + 9}%`;
+            }
+        };
+        
+        // First, collect all items from all confidence levels into flat arrays
         allConfidenceLevels.forEach(confidenceLevel => {
             const oldSchoolItems = oldSchoolGroups[confidenceLevel] || [];
             const newSchoolItems = newSchoolGroups[confidenceLevel] || [];
-
-            // Format confidence level label for deciles
-            const formatConfidenceLabel = (level) => {
-                if (level === 100) {
-                    return '100%';
-                } else {
-                    return `${level}-${level + 9}%`;
-                }
-            };
-
-            // Create confidence level header for old-school
-            if (oldSchoolItems.length > 0) {
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'confidence-level-header';
-                headerDiv.textContent = formatConfidenceLabel(confidenceLevel);
-                oldSchoolContainer.appendChild(headerDiv);
-            }
-
-            // Create confidence level header for new-school
-            if (newSchoolItems.length > 0) {
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'confidence-level-header';
-                headerDiv.textContent = formatConfidenceLabel(confidenceLevel);
-                newSchoolContainer.appendChild(headerDiv);
-            }
-
-            // Create image grid for this confidence level
-            const maxItems = Math.max(oldSchoolItems.length, newSchoolItems.length);
-            const itemsPerRow = 4; // Number of images per row
-
-            // Render old-school images in grid
-            if (oldSchoolItems.length > 0) {
-                const gridDiv = document.createElement('div');
-                gridDiv.className = 'confidence-level-grid';
-                
-                oldSchoolItems.forEach(item => {
-                const bgColor = getOldSchoolGradientColor(item.status);
-                const imgDiv = document.createElement('div');
-                const sizeClass = getSizeClass(oldSchoolItemCount);
-                imgDiv.className = `comparison-image-item ${sizeClass}`;
-                imgDiv.style.backgroundColor = bgColor;
-                    
-                    oldSchoolItemCount++;
-                    
-                    const img = document.createElement('img');
-                    img.setAttribute('data-src', item.imageUrl); // Use data-src for lazy loading
-                    img.alt = 'Old-school storefront';
-                    img.loading = 'lazy';
-                    img.onerror = function() {
-                        this.style.display = 'none';
-                        this.parentElement.innerHTML = '<div class="image-error">Image unavailable</div>';
-                    };
-                    // Set src when image is near viewport (Intersection Observer will handle this)
-                    imgDiv.appendChild(img);
-                    
-                    // Add loading placeholder
-                    img.style.backgroundColor = '#f1f5f9';
-                    img.style.minHeight = '100px';
-                    
-                    // Use Intersection Observer for better lazy loading control
-                    const observer = new IntersectionObserver((entries) => {
-                        entries.forEach(entry => {
-                            if (entry.isIntersecting) {
-                                const img = entry.target;
-                                const dataSrc = img.getAttribute('data-src');
-                                if (dataSrc) {
-                                    img.src = dataSrc;
-                                    img.style.backgroundColor = 'transparent';
-                                    observer.unobserve(img);
-                                }
-                            }
-                        });
-                    }, {
-                        rootMargin: '100px' // Start loading 100px before entering viewport for smoother experience
-                    });
-                    observer.observe(img);
-                    
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'comparison-tooltip';
-                    
-                    // Add larger thumbnail to tooltip - lazy load on hover
-                    const tooltipImage = `<div class="tooltip-image"><img data-src="${item.imageUrl}" alt="Storefront preview" loading="lazy" style="display: none;"></div>`;
-                    
-                    tooltip.innerHTML = `
-                        <div class="tooltip-content">
-                            ${tooltipImage}
-                            <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
-                            <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
-                            <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
-                        </div>
-                    `;
-                    
-                    // Lazy load tooltip image only when tooltip is shown
-                    imgDiv.addEventListener('mouseenter', function() {
-                        const tooltipImg = tooltip.querySelector('img');
-                        if (tooltipImg && !tooltipImg.src && tooltipImg.dataset.src) {
-                            tooltipImg.src = tooltipImg.dataset.src;
-                            tooltipImg.style.display = 'block';
-                        }
-                    }, { once: true });
-                    
-                    imgDiv.appendChild(tooltip);
-                    gridDiv.appendChild(imgDiv);
-                });
-                
-                oldSchoolContainer.appendChild(gridDiv);
-            }
-
-            // Render new-school images in grid
-            if (newSchoolItems.length > 0) {
-                const gridDiv = document.createElement('div');
-                gridDiv.className = 'confidence-level-grid';
-                
-                newSchoolItems.forEach(item => {
-                const bgColor = getNewSchoolGradientColor(item.status);
-                const imgDiv = document.createElement('div');
-                const sizeClass = getSizeClass(newSchoolItemCount);
-                imgDiv.className = `comparison-image-item ${sizeClass}`;
-                imgDiv.style.backgroundColor = bgColor;
-                    
-                    newSchoolItemCount++;
-                    
-                    const img = document.createElement('img');
-                    img.setAttribute('data-src', item.imageUrl); // Use data-src for lazy loading
-                    img.alt = 'New-school storefront';
-                    img.loading = 'lazy';
-                    img.onerror = function() {
-                        this.style.display = 'none';
-                        this.parentElement.innerHTML = '<div class="image-error">Image unavailable</div>';
-                    };
-                    // Set src when image is near viewport (Intersection Observer will handle this)
-                    imgDiv.appendChild(img);
-                    
-                    // Add loading placeholder
-                    img.style.backgroundColor = '#f1f5f9';
-                    img.style.minHeight = '100px';
-                    
-                    // Use Intersection Observer for better lazy loading control
-                    const observer = new IntersectionObserver((entries) => {
-                        entries.forEach(entry => {
-                            if (entry.isIntersecting) {
-                                const img = entry.target;
-                                const dataSrc = img.getAttribute('data-src');
-                                if (dataSrc) {
-                                    img.src = dataSrc;
-                                    img.style.backgroundColor = 'transparent';
-                                    observer.unobserve(img);
-                                }
-                            }
-                        });
-                    }, {
-                        rootMargin: '100px' // Start loading 100px before entering viewport for smoother experience
-                    });
-                    observer.observe(img);
-                    
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'comparison-tooltip';
-                    
-                    // Add larger thumbnail to tooltip - lazy load on hover
-                    const tooltipImage = `<div class="tooltip-image"><img data-src="${item.imageUrl}" alt="Storefront preview" loading="lazy" style="display: none;"></div>`;
-                    
-                    tooltip.innerHTML = `
-                        <div class="tooltip-content">
-                            ${tooltipImage}
-                            <div class="tooltip-row"><strong>Name:</strong> ${item.businessName}</div>
-                            <div class="tooltip-row"><strong>Category:</strong> ${item.category}</div>
-                            <div class="tooltip-row"><strong>Status:</strong> ${item.status}</div>
-                        </div>
-                    `;
-                    
-                    // Lazy load tooltip image only when tooltip is shown
-                    imgDiv.addEventListener('mouseenter', function() {
-                        const tooltipImg = tooltip.querySelector('img');
-                        if (tooltipImg && !tooltipImg.src && tooltipImg.dataset.src) {
-                            tooltipImg.src = tooltipImg.dataset.src;
-                            tooltipImg.style.display = 'block';
-                        }
-                    }, { once: true });
-                    
-                    imgDiv.appendChild(tooltip);
-                    
-                    gridDiv.appendChild(imgDiv);
-                });
-                
-                newSchoolContainer.appendChild(gridDiv);
-            }
+            
+            oldSchoolItems.forEach(item => {
+                allOldSchoolItems.push({ ...item, confidenceLevel });
+            });
+            
+            newSchoolItems.forEach(item => {
+                allNewSchoolItems.push({ ...item, confidenceLevel });
+            });
         });
+        
+        // Function to render items with pagination
+        const renderItems = (items, container, isOldSchool, displayedCountRef, itemCountRef, limit) => {
+            const itemsToRender = items.slice(displayedCountRef.value, displayedCountRef.value + limit);
+            let currentConfidenceLevel = null;
+            let currentGridDiv = null;
+            
+            itemsToRender.forEach(item => {
+                // Create confidence level header when it changes
+                if (item.confidenceLevel !== currentConfidenceLevel) {
+                    currentConfidenceLevel = item.confidenceLevel;
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'confidence-level-header';
+                    headerDiv.textContent = formatConfidenceLabel(currentConfidenceLevel);
+                    container.appendChild(headerDiv);
+                    
+                    currentGridDiv = document.createElement('div');
+                    currentGridDiv.className = 'confidence-level-grid';
+                    container.appendChild(currentGridDiv);
+                }
+                
+                createImageItem(item, isOldSchool, currentGridDiv, itemCountRef);
+                displayedCountRef.value++;
+            });
+        };
+        
+        // Function to create and add "Load more" button
+        const addLoadMoreButton = (container, items, displayedCountRef, isOldSchool, itemCountRef) => {
+            if (displayedCountRef.value >= items.length) return; // All items already displayed
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.textAlign = 'center';
+            buttonContainer.style.margin = '2rem 0';
+            
+            const loadMoreBtn = document.createElement('button');
+            const updateButtonText = () => {
+                const remaining = items.length - displayedCountRef.value;
+                loadMoreBtn.textContent = remaining > 0 ? `Load More (${remaining} remaining)` : 'All items loaded';
+            };
+            updateButtonText();
+            
+            loadMoreBtn.style.padding = '0.75rem 2rem';
+            loadMoreBtn.style.fontSize = '1rem';
+            loadMoreBtn.style.backgroundColor = '#8B6F47';
+            loadMoreBtn.style.color = 'white';
+            loadMoreBtn.style.border = 'none';
+            loadMoreBtn.style.borderRadius = '8px';
+            loadMoreBtn.style.cursor = 'pointer';
+            loadMoreBtn.style.transition = 'background-color 0.2s';
+            
+            loadMoreBtn.addEventListener('mouseenter', () => {
+                loadMoreBtn.style.backgroundColor = '#6B5537';
+            });
+            loadMoreBtn.addEventListener('mouseleave', () => {
+                loadMoreBtn.style.backgroundColor = '#8B6F47';
+            });
+            
+            loadMoreBtn.addEventListener('click', () => {
+                renderItems(items, container, isOldSchool, displayedCountRef, itemCountRef, LOAD_MORE_INCREMENT);
+                
+                // Update or remove button
+                if (displayedCountRef.value >= items.length) {
+                    buttonContainer.remove();
+                } else {
+                    updateButtonText();
+                }
+            });
+            
+            buttonContainer.appendChild(loadMoreBtn);
+            container.appendChild(buttonContainer);
+        };
+        
+        // Render initial items (first 100 of each category)
+        const oldSchoolDisplayedRef = { value: 0 };
+        const newSchoolDisplayedRef = { value: 0 };
+        const oldSchoolItemCountRef = { value: 0 };
+        const newSchoolItemCountRef = { value: 0 };
+        
+        renderItems(allOldSchoolItems, oldSchoolContainer, true, oldSchoolDisplayedRef, oldSchoolItemCountRef, INITIAL_LIMIT);
+        renderItems(allNewSchoolItems, newSchoolContainer, false, newSchoolDisplayedRef, newSchoolItemCountRef, INITIAL_LIMIT);
+        
+        // Add "Load more" buttons
+        addLoadMoreButton(oldSchoolContainer, allOldSchoolItems, oldSchoolDisplayedRef, true, oldSchoolItemCountRef);
+        addLoadMoreButton(newSchoolContainer, allNewSchoolItems, newSchoolDisplayedRef, false, newSchoolItemCountRef);
+        
 
     } catch (error) {
         console.error('Error loading comparison visualization:', error);
