@@ -2356,6 +2356,15 @@ async function initSankeyDiagram() {
                 }
             });
             
+            // Sort allBusinesses by their address's position in sortedAddresses to ensure correct rendering order
+            allBusinesses.sort((a, b) => {
+                const posA = addressPositions.get(a.address);
+                const posB = addressPositions.get(b.address);
+                const yIndexA = posA ? posA.yIndex : 9999;
+                const yIndexB = posB ? posB.yIndex : 9999;
+                return yIndexA - yIndexB;
+            });
+            
             return {
                 positions: positions,
                 oldSchoolCount: phase.oldSchool.length,
