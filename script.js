@@ -2482,6 +2482,12 @@ async function initSankeyDiagram() {
             const phaseX = leftMargin + addressColumnWidth + columnSpacing + phaseIdx * (phaseColumnWidth + columnSpacing);
             const phaseData = phasePositions[phaseIdx];
             
+            // Create a map of address to business for this phase (for rendering)
+            const addressToBusiness = new Map();
+            [...phaseData.oldSchool, ...phaseData.newSchool].forEach(business => {
+                addressToBusiness.set(business.address, business);
+            });
+            
             // Draw phase label
             svg.append('text')
                 .attr('x', phaseX + phaseColumnWidth / 2)
@@ -2493,7 +2499,7 @@ async function initSankeyDiagram() {
                 .text(phaseName);
             
             // Draw businesses in the same order as sortedAddresses (aligned vertically)
-            // Iterate through sortedAddresses to maintain correct order
+            // Iterate through sortedAddresses to maintain correct order and eliminate blank rows
             sortedAddresses.forEach((addressInfo, addressIdx) => {
                 const business = addressToBusiness.get(addressInfo.address);
                 if (business) {
