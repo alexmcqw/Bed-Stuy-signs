@@ -2273,17 +2273,21 @@ async function initSankeyDiagram() {
         });
         
         // Filter to only addresses that have businesses in at least 2 phases
-        addressData = addressData.filter(addressInfo => {
+        // Also calculate the actual number of phases with businesses for each address
+        addressData = addressData.map(addressInfo => {
             // Count how many phases have businesses (old-school or new-school)
             const phasesWithBusinesses = addressInfo.phaseBusinesses.filter(phaseData => 
                 phaseData.oldSchool.length > 0 || phaseData.newSchool.length > 0
             ).length;
-            return phasesWithBusinesses >= 2;
-        });
+            return {
+                ...addressInfo,
+                phasesWithBusinesses: phasesWithBusinesses
+            };
+        }).filter(addressInfo => addressInfo.phasesWithBusinesses >= 2);
         
-        // Sort addresses by number of phases (businessCount) in descending order
+        // Sort addresses by number of phases with businesses in descending order
         // Addresses with 5 phases at top, then 4, then 3, etc.
-        addressData.sort((a, b) => b.businessCount - a.businessCount);
+        addressData.sort((a, b) => b.phasesWithBusinesses - a.phasesWithBusinesses);
         
         // For each phase, collect businesses and organize by old-school (top) / new-school (bottom)
         const phaseBusinesses = phases.map(() => ({ oldSchool: [], newSchool: [] }));
@@ -2296,9 +2300,9 @@ async function initSankeyDiagram() {
         });
         
         // Calculate positions for addresses (left column)
-        // Sort by phase count (businessCount) descending only
+        // Sort by number of phases with businesses descending only
         const sortedAddresses = [...addressData].sort((a, b) => {
-            return b.businessCount - a.businessCount;
+            return b.phasesWithBusinesses - a.phasesWithBusinesses;
         });
         
         const addressPositions = new Map();
