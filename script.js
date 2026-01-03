@@ -2295,10 +2295,29 @@ async function initSankeyDiagram() {
         });
         
         // Debug: Log first few addresses to verify sorting
-        console.log('First 20 addresses after sorting:', addressData.slice(0, 20).map(a => ({
+        console.log('Total addresses after filtering:', addressData.length);
+        console.log('First 30 addresses after sorting:', addressData.slice(0, 30).map((a, idx) => ({
+            index: idx,
             address: a.address,
-            phases: a.phasesWithBusinesses
+            phases: a.phasesWithBusinesses,
+            businessCount: a.businessCount
         })));
+        
+        // Verify specific addresses mentioned by user
+        const testAddresses = ['1515 Fulton Street', '1164 Broadway'];
+        testAddresses.forEach(addr => {
+            const found = addressData.find(a => a.address.includes(addr) || a.address.includes('1515') || a.address.includes('1164'));
+            if (found) {
+                const idx = addressData.indexOf(found);
+                console.log(`Found ${addr} at index ${idx}:`, {
+                    address: found.address,
+                    phases: found.phasesWithBusinesses,
+                    businessCount: found.businessCount
+                });
+            } else {
+                console.log(`Could not find address containing "${addr}"`);
+            }
+        });
         
         // For each phase, collect businesses and organize by old-school (top) / new-school (bottom)
         const phaseBusinesses = phases.map(() => ({ oldSchool: [], newSchool: [] }));
