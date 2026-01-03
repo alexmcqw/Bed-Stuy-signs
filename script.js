@@ -731,9 +731,17 @@ function createMarkers(rows, headers) {
                         // Load lazy-loaded images in popup
                         const lazyImages = popupElement.querySelectorAll('img[data-src]');
                         lazyImages.forEach(img => {
-                            if (img.dataset.src && !img.src) {
+                            if (img.dataset.src) {
+                                // Set src to trigger image load
                                 img.src = img.dataset.src;
                                 img.style.display = 'block';
+                                // Remove data-src after setting src to prevent duplicate loads
+                                img.removeAttribute('data-src');
+                                
+                                // Add error handler in case image fails to load
+                                img.onerror = function() {
+                                    this.style.display = 'none';
+                                };
                             }
                         });
                         
