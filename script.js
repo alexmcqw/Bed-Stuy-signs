@@ -2458,25 +2458,23 @@ async function initSankeyDiagram() {
             .attr('fill', '#1e293b')
             .text('Address');
         
-        // Draw addresses in sorted order (by phase count, then old-school/new-school)
-        sortedAddresses.forEach(addressInfo => {
-            const pos = addressPositions.get(addressInfo.address);
-            if (pos) {
-                const y = getYPosition(pos.yIndex);
-                
-                // Add address text (truncate if too long)
-                const addressText = addressInfo.address.length > 25 ? 
-                    addressInfo.address.substring(0, 22) + '...' : 
-                    addressInfo.address;
-                
-                svg.append('text')
-                    .attr('x', addressX)
-                    .attr('y', y + nodeHeight / 2)
-                    .attr('dy', '0.35em')
-                    .attr('fill', '#1e293b')
-                    .attr('font-size', '11px')
-                    .text(addressText);
-            }
+        // Draw addresses in sorted order (by phase count descending)
+        sortedAddresses.forEach((addressInfo, idx) => {
+            // Use the index in sortedAddresses directly to ensure correct order
+            const y = getYPosition(idx);
+            
+            // Add address text (truncate if too long)
+            const addressText = addressInfo.address.length > 25 ? 
+                addressInfo.address.substring(0, 22) + '...' : 
+                addressInfo.address;
+            
+            svg.append('text')
+                .attr('x', addressX)
+                .attr('y', y + nodeHeight / 2)
+                .attr('dy', '0.35em')
+                .attr('fill', '#1e293b')
+                .attr('font-size', '11px')
+                .text(addressText);
         });
 
         // Draw phase columns and businesses
@@ -2494,36 +2492,41 @@ async function initSankeyDiagram() {
                 .attr('fill', '#1e293b')
                 .text(phaseName);
             
-            // Draw businesses sorted by address position (aligned vertically)
-            phaseData.allBusinesses.forEach(business => {
-                const businessKey = `${business.address}-${business.phaseNumber}`;
-                const pos = phaseData.positions.get(businessKey);
-                if (pos) {
-                    const y = getYPosition(pos.yIndex);
-                    const color = business.isOldSchool ? '#8B6F47' : '#E91E63';
-                    
-                    svg.append('rect')
-                        .attr('x', phaseX)
-                        .attr('y', y)
-                        .attr('width', phaseColumnWidth)
-                        .attr('height', nodeHeight)
-                        .attr('fill', color)
-                        .attr('stroke', '#fff')
-                        .attr('stroke-width', 1)
-                        .attr('rx', 2);
-                    
-                    // Add business name text
-                    const businessName = business.businessName || 'Unknown';
-                    const nameText = businessName.length > 18 ? businessName.substring(0, 15) + '...' : businessName;
-                    svg.append('text')
-                        .attr('x', phaseX + phaseColumnWidth / 2)
-                        .attr('y', y + nodeHeight / 2)
-                        .attr('dy', '0.35em')
-                        .attr('text-anchor', 'middle')
-                        .attr('fill', '#fff')
-                        .attr('font-size', '9px')
-                        .attr('font-weight', '500')
-                        .text(nameText);
+            // Draw businesses in the same order as sortedAddresses (aligned vertically)
+            // Iterate through sortedAddresses to maintain correct order
+            sortedAddresses.forEach((addressInfo, addressIdx) => {
+                const business = addressToBusiness.get(addressInfo.address);
+                if (business) {
+                    const businessKey = `${business.address}-${business.phaseNumber}`;
+                    const pos = phaseData.positions.get(businessKey);
+                    if (pos) {
+                        // Use addressIdx to match the address column position
+                        const y = getYPosition(addressIdx);
+                        const color = business.isOldSchool ? '#8B6F47' : '#E91E63';
+                        
+                        svg.append('rect')
+                            .attr('x', phaseX)
+                            .attr('y', y)
+                            .attr('width', phaseColumnWidth)
+                            .attr('height', nodeHeight)
+                            .attr('fill', color)
+                            .attr('stroke', '#fff')
+                            .attr('stroke-width', 1)
+                            .attr('rx', 2);
+                        
+                        // Add business name text
+                        const businessName = business.businessName || 'Unknown';
+                        const nameText = businessName.length > 18 ? businessName.substring(0, 15) + '...' : businessName;
+                        svg.append('text')
+                            .attr('x', phaseX + phaseColumnWidth / 2)
+                            .attr('y', y + nodeHeight / 2)
+                            .attr('dy', '0.35em')
+                            .attr('text-anchor', 'middle')
+                            .attr('fill', '#fff')
+                            .attr('font-size', '9px')
+                            .attr('font-weight', '500')
+                            .text(nameText);
+                    }
                 }
             });
         });
