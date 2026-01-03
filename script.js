@@ -2296,17 +2296,9 @@ async function initSankeyDiagram() {
         });
         
         // Calculate positions for addresses (left column)
-        // Sort by phase count (businessCount) descending, then by old-school/new-school
+        // Sort by phase count (businessCount) descending only
         const sortedAddresses = [...addressData].sort((a, b) => {
-            // First sort by phase count (descending)
-            if (b.businessCount !== a.businessCount) {
-                return b.businessCount - a.businessCount;
-            }
-            // If same phase count, put old-school first
-            if (a.isOldSchool !== b.isOldSchool) {
-                return a.isOldSchool ? -1 : 1;
-            }
-            return 0;
+            return b.businessCount - a.businessCount;
         });
         
         const addressPositions = new Map();
