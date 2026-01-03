@@ -234,57 +234,63 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Handle anchor links to Works Cited section
         function handleWorksCitedAnchor() {
-        const hash = window.location.hash;
-        if (hash && hash.startsWith('#works-cited-')) {
-            // Find the tab button for "More findings & Methodology" (data-tab="background")
-            const backgroundTab = document.querySelector('.tab-button[data-tab="background"]');
-            if (backgroundTab) {
-                // Switch to the background tab
-                tabButtons.forEach(btn => {
-                    btn.classList.remove('active');
-                    btn.setAttribute('aria-selected', 'false');
-                });
-                tabPanels.forEach(panel => {
-                    panel.classList.remove('active');
-                });
-                
-                backgroundTab.classList.add('active');
-                backgroundTab.setAttribute('aria-selected', 'true');
-                document.getElementById('background').classList.add('active');
-                
-                // Initialize visualizations for this tab
-                initStackedAreaChart();
-                initRegressionAnalysis();
-                initSankeyDiagram();
-                
-                // Scroll to the target element after a short delay to ensure tab is visible
-                setTimeout(() => {
-                    const targetElement = document.querySelector(hash);
-                    if (targetElement) {
-                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        // Add a small offset for fixed header if needed
-                        window.scrollBy(0, -20);
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#works-cited-')) {
+                // Find the tab button for "More findings & Methodology" (data-tab="background")
+                const backgroundTab = document.querySelector('.tab-button[data-tab="background"]');
+                if (backgroundTab) {
+                    // Switch to the background tab
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-selected', 'false');
+                    });
+                    tabPanels.forEach(panel => {
+                        panel.classList.remove('active');
+                    });
+                    
+                    backgroundTab.classList.add('active');
+                    backgroundTab.setAttribute('aria-selected', 'true');
+                    document.getElementById('background').classList.add('active');
+                    
+                    // Initialize visualizations for this tab
+                    if (typeof initStackedAreaChart === 'function') {
+                        initStackedAreaChart();
                     }
-                }, 100);
+                    if (typeof initRegressionAnalysis === 'function') {
+                        initRegressionAnalysis();
+                    }
+                    if (typeof initSankeyDiagram === 'function') {
+                        initSankeyDiagram();
+                    }
+                    
+                    // Scroll to the target element after a short delay to ensure tab is visible
+                    setTimeout(() => {
+                        const targetElement = document.querySelector(hash);
+                        if (targetElement) {
+                            targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            // Add a small offset for fixed header if needed
+                            window.scrollBy(0, -20);
+                        }
+                    }, 100);
+                }
             }
         }
-    }
-    
-    // Handle anchor links when clicking on citation links
-    document.querySelectorAll('a[href^="#works-cited-"]').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const hash = link.getAttribute('href');
-            window.location.hash = hash;
-            handleWorksCitedAnchor();
+        
+        // Handle anchor links when clicking on citation links
+        document.querySelectorAll('a[href^="#works-cited-"]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const hash = link.getAttribute('href');
+                window.location.hash = hash;
+                handleWorksCitedAnchor();
+            });
         });
-    });
-    
-    // Handle anchor links when page loads with hash in URL
-    if (window.location.hash) {
-        handleWorksCitedAnchor();
-    }
-    
+        
+        // Handle anchor links when page loads with hash in URL
+        if (window.location.hash) {
+            handleWorksCitedAnchor();
+        }
+        
         // Also handle hash changes (when user navigates back/forward)
         window.addEventListener('hashchange', handleWorksCitedAnchor);
     } catch (error) {
