@@ -2522,11 +2522,8 @@ async function initSankeyDiagram() {
             sortedAddresses.forEach((addressInfo, addressIdx) => {
                 const business = addressToBusiness.get(addressInfo.address);
                 if (business) {
-                    const businessKey = `${business.address}-${business.phaseNumber}`;
-                    const pos = phaseData.positions.get(businessKey);
-                    if (pos) {
-                        // Use addressIdx to match the address column position
-                        const y = getYPosition(addressIdx);
+                    // Use addressIdx directly to match the address column position exactly
+                    const y = getYPosition(addressIdx);
                         const color = business.isOldSchool ? '#8B6F47' : '#E91E63';
                         
                         svg.append('rect')
@@ -2551,8 +2548,8 @@ async function initSankeyDiagram() {
                             .attr('font-size', '9px')
                             .attr('font-weight', '500')
                             .text(nameText);
-                    }
                 }
+                // If no business for this address in this phase, we skip it (no blank row)
             });
         });
 
