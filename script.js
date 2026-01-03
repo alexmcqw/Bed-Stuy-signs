@@ -667,7 +667,7 @@ function createMarkers(rows, headers) {
                     
                     // Add storefront image thumbnail - lazy load when popup opens
                     if (business.photoUrl) {
-                        popupContent += `<div class="popup-image-container"><img data-src="${business.photoUrl}" alt="${business.name}" class="popup-thumbnail" loading="lazy" style="max-width: 200px; max-height: 150px; object-fit: cover;" onerror="this.style.display='none'"></div>`;
+                        popupContent += `<div class="popup-image-container"><img data-src="${business.photoUrl}" alt="${business.name}" class="popup-thumbnail" loading="lazy" style="max-width: 200px; max-height: 150px; object-fit: cover; display: block;" onerror="this.style.display='none'"></div>`;
                     }
 
                     if (business.category) {
