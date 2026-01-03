@@ -2287,7 +2287,18 @@ async function initSankeyDiagram() {
         
         // Sort addresses by number of phases with businesses in descending order
         // Addresses with 5 phases at top, then 4, then 3, etc.
-        addressData.sort((a, b) => b.phasesWithBusinesses - a.phasesWithBusinesses);
+        addressData.sort((a, b) => {
+            const diff = b.phasesWithBusinesses - a.phasesWithBusinesses;
+            if (diff !== 0) return diff;
+            // If same number of phases, maintain original order (stable sort)
+            return 0;
+        });
+        
+        // Debug: Log first few addresses to verify sorting
+        console.log('First 20 addresses after sorting:', addressData.slice(0, 20).map(a => ({
+            address: a.address,
+            phases: a.phasesWithBusinesses
+        })));
         
         // For each phase, collect businesses and organize by old-school (top) / new-school (bottom)
         const phaseBusinesses = phases.map(() => ({ oldSchool: [], newSchool: [] }));
@@ -2299,11 +2310,8 @@ async function initSankeyDiagram() {
             });
         });
         
-        // Calculate positions for addresses (left column)
-        // Sort by number of phases with businesses descending only
-        const sortedAddresses = [...addressData].sort((a, b) => {
-            return b.phasesWithBusinesses - a.phasesWithBusinesses;
-        });
+        // Use the already-sorted addressData directly (no need to sort again)
+        const sortedAddresses = addressData;
         
         const addressPositions = new Map();
         let addressYIndex = 0;
