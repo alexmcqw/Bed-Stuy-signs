@@ -221,17 +221,19 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error initializing annotations:', error);
         }
-    
-    // Initialize map if map tab is active by default
-    const activeTab = document.querySelector('.tab-button.active');
-    if (activeTab && activeTab.getAttribute('data-tab') === 'map') {
-        setTimeout(() => {
-            initMap();
-        }, 300);
-    }
-    
-    // Handle anchor links to Works Cited section
-    function handleWorksCitedAnchor() {
+        
+        // Initialize map if map tab is active by default
+        const activeTab = document.querySelector('.tab-button.active');
+        if (activeTab && activeTab.getAttribute('data-tab') === 'map') {
+            setTimeout(() => {
+                if (typeof initMap === 'function') {
+                    initMap();
+                }
+            }, 300);
+        }
+        
+        // Handle anchor links to Works Cited section
+        function handleWorksCitedAnchor() {
         const hash = window.location.hash;
         if (hash && hash.startsWith('#works-cited-')) {
             // Find the tab button for "More findings & Methodology" (data-tab="background")
