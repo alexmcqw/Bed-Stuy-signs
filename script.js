@@ -2285,6 +2285,17 @@ async function initSankeyDiagram() {
             };
         }).filter(addressInfo => addressInfo.phasesWithBusinesses >= 2);
         
+        // Remove duplicate addresses - if same address appears multiple times (different coordinates),
+        // keep only the one with the most phases
+        const addressMap = new Map();
+        addressData.forEach(addressInfo => {
+            const existing = addressMap.get(addressInfo.address);
+            if (!existing || addressInfo.phasesWithBusinesses > existing.phasesWithBusinesses) {
+                addressMap.set(addressInfo.address, addressInfo);
+            }
+        });
+        addressData = Array.from(addressMap.values());
+        
         // Sort addresses by number of phases with businesses in descending order
         // Addresses with 5 phases at top, then 4, then 3, etc.
         addressData.sort((a, b) => {
