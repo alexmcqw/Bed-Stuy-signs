@@ -2409,8 +2409,9 @@ async function initSankeyDiagram() {
         
         // Create links between consecutive phases
         // Link businesses at the same address across phases, regardless of style changes
+        // Use sortedAddresses to ensure we only create links for addresses that are actually displayed
         const links = [];
-        addressData.forEach(addressInfo => {
+        sortedAddresses.forEach((addressInfo, addressIdx) => {
             // For each address, create links between consecutive phases
             for (let phaseIdx = 0; phaseIdx < phases.length - 1; phaseIdx++) {
                 const currentPhase = addressInfo.phaseBusinesses[phaseIdx];
@@ -2429,21 +2430,30 @@ async function initSankeyDiagram() {
                     );
                     
                     if (targetBusiness) {
-                        const sourceKey = `${sourceBusiness.address}-${sourceBusiness.phaseNumber}`;
-                        const targetKey = `${targetBusiness.address}-${targetBusiness.phaseNumber}`;
-                        const sourcePos = phasePositions[phaseIdx].positions.get(sourceKey);
-                        const targetPos = phasePositions[phaseIdx + 1].positions.get(targetKey);
+                        // Use addressIdx directly to match the rendering position
+                        const sourcePos = {
+                            business: sourceBusiness,
+                            yIndex: addressIdx,
+                            height: 1,
+                            phaseIdx: phaseIdx,
+                            isOldSchool: sourceBusiness.isOldSchool
+                        };
+                        const targetPos = {
+                            business: targetBusiness,
+                            yIndex: addressIdx,
+                            height: 1,
+                            phaseIdx: phaseIdx + 1,
+                            isOldSchool: targetBusiness.isOldSchool
+                        };
                         
-                        if (sourcePos && targetPos) {
-                            // Determine link color based on target (newer/right-hand) business style
-                            links.push({
-                                source: sourceBusiness,
-                                target: targetBusiness,
-                                sourcePos: sourcePos,
-                                targetPos: targetPos,
-                                isOldSchool: targetBusiness.isOldSchool
-                            });
-                        }
+                        // Determine link color based on target (newer/right-hand) business style
+                        links.push({
+                            source: sourceBusiness,
+                            target: targetBusiness,
+                            sourcePos: sourcePos,
+                            targetPos: targetPos,
+                            isOldSchool: targetBusiness.isOldSchool
+                        });
                     }
                 });
             }
