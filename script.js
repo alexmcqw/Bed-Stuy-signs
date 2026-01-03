@@ -2304,7 +2304,7 @@ async function initSankeyDiagram() {
         const addressPositions = new Map();
         let addressYIndex = 0;
         
-        // Position addresses in sorted order (by phase count, then old-school/new-school)
+        // Position addresses in sorted order (by phase count descending)
         sortedAddresses.forEach(addressInfo => {
             addressPositions.set(addressInfo.address, {
                 address: addressInfo.address,
