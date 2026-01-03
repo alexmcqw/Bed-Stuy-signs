@@ -129,50 +129,98 @@ function initAnnotations() {
 
 // Tab Navigation
 document.addEventListener('DOMContentLoaded', function() {
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabPanels = document.querySelectorAll('.tab-panel');
+    try {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanels = document.querySelectorAll('.tab-panel');
 
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetTab = button.getAttribute('data-tab');
+        if (tabButtons.length === 0 || tabPanels.length === 0) {
+            console.error('Tab buttons or panels not found');
+            return;
+        }
 
-            // Remove active class from all buttons and panels
-            tabButtons.forEach(btn => {
-                btn.classList.remove('active');
-                btn.setAttribute('aria-selected', 'false');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                try {
+                    const targetTab = button.getAttribute('data-tab');
+                    if (!targetTab) {
+                        console.error('Tab button missing data-tab attribute');
+                        return;
+                    }
+
+                    // Remove active class from all buttons and panels
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-selected', 'false');
+                    });
+                    tabPanels.forEach(panel => {
+                        panel.classList.remove('active');
+                    });
+
+                    // Add active class to clicked button and corresponding panel
+                    button.classList.add('active');
+                    button.setAttribute('aria-selected', 'true');
+                    const targetPanel = document.getElementById(targetTab);
+                    if (targetPanel) {
+                        targetPanel.classList.add('active');
+                    } else {
+                        console.error('Target panel not found:', targetTab);
+                        return;
+                    }
+
+                    // Initialize visualizations when tab becomes active
+                    try {
+                        if (targetTab === 'map') {
+                            // Small delay to ensure tab panel is visible before initializing map
+                            setTimeout(() => {
+                                if (typeof initMap === 'function') {
+                                    initMap();
+                                }
+                            }, 100);
+                        } else if (targetTab === 'timeline') {
+                            if (typeof initTimeline === 'function') {
+                                initTimeline();
+                            }
+                        } else if (targetTab === 'background') {
+                            if (typeof initStackedAreaChart === 'function') {
+                                initStackedAreaChart();
+                            }
+                            if (typeof initRegressionAnalysis === 'function') {
+                                initRegressionAnalysis();
+                            }
+                            if (typeof initSankeyDiagram === 'function') {
+                                initSankeyDiagram();
+                            }
+                        } else if (targetTab === 'comparison') {
+                            if (typeof initComparisonVisualization === 'function') {
+                                initComparisonVisualization();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error initializing visualization for tab:', targetTab, error);
+                    }
+                } catch (error) {
+                    console.error('Error handling tab click:', error);
+                }
             });
-            tabPanels.forEach(panel => {
-                panel.classList.remove('active');
-            });
-
-            // Add active class to clicked button and corresponding panel
-            button.classList.add('active');
-            button.setAttribute('aria-selected', 'true');
-            document.getElementById(targetTab).classList.add('active');
-
-            // Initialize visualizations when tab becomes active
-            if (targetTab === 'map') {
-                // Small delay to ensure tab panel is visible before initializing map
-                setTimeout(() => {
-                    initMap();
-                }, 100);
-            } else if (targetTab === 'timeline') {
-                initTimeline();
-            } else if (targetTab === 'background') {
-                initStackedAreaChart();
-                initRegressionAnalysis();
-                initSankeyDiagram();
-            } else if (targetTab === 'comparison') {
-                initComparisonVisualization();
-            }
         });
-    });
 
-    // Initialize charts
-    initRevenueChart();
-    
-    // Initialize annotations
-    initAnnotations();
+        // Initialize charts
+        try {
+            if (typeof initRevenueChart === 'function') {
+                initRevenueChart();
+            }
+        } catch (error) {
+            console.error('Error initializing revenue chart:', error);
+        }
+        
+        // Initialize annotations
+        try {
+            if (typeof initAnnotations === 'function') {
+                initAnnotations();
+            }
+        } catch (error) {
+            console.error('Error initializing annotations:', error);
+        }
     
     // Initialize map if map tab is active by default
     const activeTab = document.querySelector('.tab-button.active');
@@ -235,8 +283,11 @@ document.addEventListener('DOMContentLoaded', function() {
         handleWorksCitedAnchor();
     }
     
-    // Also handle hash changes (when user navigates back/forward)
-    window.addEventListener('hashchange', handleWorksCitedAnchor);
+        // Also handle hash changes (when user navigates back/forward)
+        window.addEventListener('hashchange', handleWorksCitedAnchor);
+    } catch (error) {
+        console.error('Error in DOMContentLoaded handler:', error);
+    }
 });
 
 // Revenue Chart
