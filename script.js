@@ -722,28 +722,55 @@ function createMarkers(rows, headers) {
 
             // Add event listener to adjust popup position based on viewport and load images
             marker.on('popupopen', function() {
-                setTimeout(() => {
+                // Use requestAnimationFrame and multiple attempts to ensure popup DOM is ready
+                const loadImages = () => {
                     const openPopup = marker.getPopup();
-                    if (openPopup && openPopup.isOpen()) {
-                        const popupElement = openPopup.getElement();
-                        if (!popupElement) return;
-                        
-                        // Load lazy-loaded images in popup
-                        const lazyImages = popupElement.querySelectorAll('img[data-src]');
-                        lazyImages.forEach(img => {
-                            if (img.dataset.src) {
-                                // Set src to trigger image load
-                                img.src = img.dataset.src;
-                                img.style.display = 'block';
-                                // Remove data-src after setting src to prevent duplicate loads
-                                img.removeAttribute('data-src');
-                                
-                                // Add error handler in case image fails to load
-                                img.onerror = function() {
-                                    this.style.display = 'none';
-                                };
-                            }
-                        });
+                    if (!openPopup || !openPopup.isOpen()) return;
+                    
+                    const popupElement = openPopup.getElement();
+                    if (!popupElement) {
+                        // Retry if popup element not ready yet
+                        requestAnimationFrame(loadImages);
+                        return;
+                    }
+                    
+                    // Load lazy-loaded images in popup - try multiple selectors
+                    const lazyImages = popupElement.querySelectorAll('img[data-src]');
+                    if (lazyImages.length === 0) {
+                        // If no images found, try again after a short delay
+                        setTimeout(loadImages, 50);
+                        return;
+                    }
+                    
+                    lazyImages.forEach(img => {
+                        if (img.dataset.src && !img.src) {
+                            // Set src to trigger image load
+                            const imageUrl = img.dataset.src;
+                            img.src = imageUrl;
+                            img.style.display = 'block';
+                            img.style.visibility = 'visible';
+                            
+                            // Remove data-src after setting src to prevent duplicate loads
+                            img.removeAttribute('data-src');
+                            
+                            // Add error handler in case image fails to load
+                            img.onerror = function() {
+                                console.warn('Failed to load image:', imageUrl);
+                                this.style.display = 'none';
+                            };
+                            
+                            // Add load handler to confirm image loaded
+                            img.onload = function() {
+                                this.style.display = 'block';
+                            };
+                        }
+                    });
+                };
+                
+                // Start loading images after popup is fully rendered
+                setTimeout(() => {
+                    requestAnimationFrame(loadImages);
+                }, 100);
                         
                         const markerLatLng = marker.getLatLng();
                         const mapPixelPoint = map.latLngToContainerPoint(markerLatLng);
