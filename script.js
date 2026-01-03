@@ -2336,7 +2336,7 @@ async function initSankeyDiagram() {
                 addressToBusiness.set(business.address, business);
             });
             
-            // Position businesses in the same order as sortedAddresses (by phase count, then old-school/new-school)
+            // Position businesses in the same order as sortedAddresses (by phase count)
             // This ensures all connecting lines are straight across
             const positions = new Map();
             const allBusinesses = [];
@@ -2357,6 +2357,7 @@ async function initSankeyDiagram() {
             });
             
             // Sort allBusinesses by their address's position in sortedAddresses to ensure correct rendering order
+            // This ensures businesses are rendered in the same order as addresses appear
             allBusinesses.sort((a, b) => {
                 const posA = addressPositions.get(a.address);
                 const posB = addressPositions.get(b.address);
